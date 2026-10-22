@@ -1,16 +1,21 @@
 import React from "react";
 import { spring, useCurrentFrame, useVideoConfig, interpolate } from "remotion";
 import type { Category } from "../data/consumerData";
+import {
+  POSITIVE,
+  NEGATIVE,
+  ACCENT_GLOW,
+  TEXT_PRIMARY,
+  TEXT_MUTED,
+  OP,
+  bgAlpha,
+} from "../data/colors";
 
 interface BarChartProps {
   data: Category[];
   startFrame?: number;
   barDelay?: number;       // 每个条形依次出现的帧间隔
 }
-
-const POSITIVE_COLOR = "#00E5FF";
-const NEGATIVE_COLOR = "#FF6B6B";
-const GLOW_COLOR = "rgba(0, 229, 255, 0.4)";
 
 export const BarChart: React.FC<BarChartProps> = ({
   data,
@@ -55,7 +60,7 @@ export const BarChart: React.FC<BarChartProps> = ({
         );
 
         const isPositive = item.growth >= 0;
-        const barColor = isPositive ? POSITIVE_COLOR : NEGATIVE_COLOR;
+        const barColor = isPositive ? POSITIVE : NEGATIVE;
 
         return (
           <div
@@ -74,7 +79,7 @@ export const BarChart: React.FC<BarChartProps> = ({
                 width: 44,
                 fontSize: 22,
                 fontWeight: 700,
-                color: index < 3 ? POSITIVE_COLOR : "#5A6A7A",
+                color: index < 3 ? POSITIVE : TEXT_MUTED,
                 fontFamily: "monospace",
                 textAlign: "right",
                 flexShrink: 0,
@@ -88,7 +93,7 @@ export const BarChart: React.FC<BarChartProps> = ({
               style={{
                 width: 140,
                 fontSize: 26,
-                color: "#E0E8F0",
+                color: TEXT_PRIMARY,
                 fontWeight: 500,
                 flexShrink: 0,
                 whiteSpace: "nowrap",
@@ -103,7 +108,7 @@ export const BarChart: React.FC<BarChartProps> = ({
                 flex: 1,
                 height: 34,
                 position: "relative",
-                backgroundColor: "rgba(255,255,255,0.04)",
+                backgroundColor: bgAlpha(OP.subtle),
                 borderRadius: 4,
                 overflow: "hidden",
               }}
@@ -118,7 +123,7 @@ export const BarChart: React.FC<BarChartProps> = ({
                     top: 0,
                     bottom: 0,
                     width: 1,
-                    backgroundColor: "rgba(255,255,255,0.06)",
+                    backgroundColor: bgAlpha(OP.medium),
                   }}
                 />
               ))}
@@ -133,7 +138,7 @@ export const BarChart: React.FC<BarChartProps> = ({
                   width: `${barWidthPct}%`,
                   background: `linear-gradient(90deg, ${barColor}CC, ${barColor})`,
                   borderRadius: 4,
-                  boxShadow: `0 0 12px ${isPositive ? GLOW_COLOR : "rgba(255,107,107,0.4)"}`,
+                  boxShadow: `0 0 12px ${isPositive ? ACCENT_GLOW : "rgba(229,115,115,0.4)"}`,
                   transition: "none",
                 }}
               />
@@ -172,7 +177,7 @@ export const BarChart: React.FC<BarChartProps> = ({
                 style={{
                   fontSize: 22,
                   fontWeight: 700,
-                  color: "#F0F4F8",
+                  color: TEXT_PRIMARY,
                   fontFamily: "monospace",
                 }}
               >
@@ -182,7 +187,7 @@ export const BarChart: React.FC<BarChartProps> = ({
                 style={{
                   fontSize: 18,
                   fontWeight: 600,
-                  color: isPositive ? POSITIVE_COLOR : NEGATIVE_COLOR,
+                  color: isPositive ? POSITIVE : NEGATIVE,
                   fontFamily: "monospace",
                 }}
               >

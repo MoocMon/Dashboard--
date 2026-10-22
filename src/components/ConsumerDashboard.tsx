@@ -3,12 +3,17 @@ import { spring, useCurrentFrame, useVideoConfig, interpolate, AbsoluteFill } fr
 import { AnimatedNumber } from "./AnimatedNumber";
 import { BarChart } from "./BarChart";
 import { coreMetrics, topCategories, timeline, canvasConfig } from "../data/consumerData";
-
-const BG_PRIMARY = "#0A0F1A";
-const BG_SECONDARY = "#111827";
-const ACCENT = "#00E5FF";
-const TEXT_PRIMARY = "#F0F4F8";
-const TEXT_SECONDARY = "#8899AA";
+import {
+  BG_PRIMARY,
+  BG_SECONDARY,
+  ACCENT,
+  TEXT_PRIMARY,
+  TEXT_SECONDARY,
+  OP,
+  accentAlpha,
+  bgAlpha,
+  NEGATIVE,
+} from "../data/colors";
 
 const formatYiw = (v: number) => {
   if (v >= 10000) {
@@ -62,8 +67,8 @@ export const ConsumerDashboard: React.FC = () => {
       style={{
         backgroundColor: BG_PRIMARY,
         backgroundImage: `
-          radial-gradient(ellipse at 20% 0%, rgba(0,229,255,0.08) 0%, transparent 50%),
-          radial-gradient(ellipse at 80% 100%, rgba(0,180,255,0.06) 0%, transparent 50%),
+          radial-gradient(ellipse at 20% 0%, ${accentAlpha(OP.medium)} 0%, transparent 55%),
+          radial-gradient(ellipse at 85% 95%, ${accentAlpha(OP.subtle + 0.03)} 0%, transparent 60%),
           linear-gradient(180deg, ${BG_PRIMARY} 0%, ${BG_SECONDARY} 100%)
         `,
         fontFamily: '"SF Pro Display", -apple-system, BlinkMacSystemFont, "PingFang SC", "Microsoft YaHei", sans-serif',
@@ -76,8 +81,8 @@ export const ConsumerDashboard: React.FC = () => {
           position: "absolute",
           inset: 0,
           backgroundImage: `
-            linear-gradient(rgba(0,229,255,0.03) 1px, transparent 1px),
-            linear-gradient(90deg, rgba(0,229,255,0.03) 1px, transparent 1px)
+            linear-gradient(${accentAlpha(OP.subtle)} 1px, transparent 1px),
+            linear-gradient(90deg, ${accentAlpha(OP.subtle)} 1px, transparent 1px)
           `,
           backgroundSize: "40px 40px",
         }}
@@ -163,7 +168,7 @@ export const ConsumerDashboard: React.FC = () => {
               style={{
                 fontSize: 18,
                 padding: "4px 12px",
-                border: `1px solid rgba(0,229,255,0.4)`,
+                border: `1px solid ${accentAlpha(OP.bold)}`,
                 borderRadius: 4,
                 color: ACCENT,
               }}
@@ -183,8 +188,8 @@ export const ConsumerDashboard: React.FC = () => {
           {/* 总额大字 */}
           <div
             style={{
-              background: `linear-gradient(135deg, rgba(0,229,255,0.08), rgba(0,100,180,0.04))`,
-              border: `1px solid rgba(0,229,255,0.2)`,
+              background: `linear-gradient(135deg, ${accentAlpha(OP.medium)}, ${accentAlpha(OP.subtle)})`,
+              border: `1px solid ${accentAlpha(OP.strong)}`,
               borderRadius: 12,
               padding: "40px 44px",
               position: "relative",
@@ -318,8 +323,8 @@ export const ConsumerDashboard: React.FC = () => {
           <div
             style={{
               marginTop: 20,
-              background: `linear-gradient(90deg, rgba(0,229,255,0.12), rgba(0,229,255,0.02))`,
-              border: `1px solid rgba(0,229,255,0.15)`,
+              background: `linear-gradient(90deg, ${accentAlpha(OP.strong)}, ${accentAlpha(OP.subtle)})`,
+              border: `1px solid ${accentAlpha(OP.medium)}`,
               borderRadius: 8,
               padding: "20px 28px",
               display: "flex",
@@ -328,7 +333,7 @@ export const ConsumerDashboard: React.FC = () => {
             }}
           >
             <div style={{ fontSize: 22, color: TEXT_PRIMARY, fontWeight: 600 }}>
-              🌐 网上零售额
+              网上零售额
             </div>
             <div style={{ display: "flex", alignItems: "baseline", gap: 16 }}>
               <AnimatedNumber
@@ -435,8 +440,8 @@ const MetricCard: React.FC<{
   return (
     <div
       style={{
-        background: "rgba(255,255,255,0.03)",
-        border: "1px solid rgba(255,255,255,0.08)",
+        background: bgAlpha(OP.subtle),
+        border: `1px solid ${bgAlpha(OP.medium + 0.04)}`,
         borderRadius: 10,
         padding: "20px 24px",
         display: "flex",
@@ -470,7 +475,7 @@ const MetricCard: React.FC<{
             fontSize: 20,
             fontWeight: 700,
             fontFamily: "monospace",
-            color: isPositive ? ACCENT : "#FF6B6B",
+            color: isPositive ? ACCENT : NEGATIVE,
           }}
         />
       </div>
