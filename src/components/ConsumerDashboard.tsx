@@ -66,13 +66,16 @@ export const ConsumerDashboard: React.FC = () => {
     <AbsoluteFill
       style={{
         backgroundColor: BG_PRIMARY,
+
         backgroundImage: `
-          radial-gradient(ellipse at 20% 0%, ${accentAlpha(OP.medium)} 0%, transparent 55%),
-          radial-gradient(ellipse at 85% 95%, ${accentAlpha(OP.subtle + 0.03)} 0%, transparent 60%),
-          linear-gradient(180deg, ${BG_PRIMARY} 0%, ${BG_SECONDARY} 100%)
-        `,
-        fontFamily: '"SF Pro Display", -apple-system, BlinkMacSystemFont, "PingFang SC", "Microsoft YaHei", sans-serif',
+                radial-gradient(ellipse at 20% 0%, ${accentAlpha(OP.medium)} 0%, transparent 55%),
+                radial-gradient(ellipse at 85% 95%, ${accentAlpha(OP.subtle + 0.03)} 0%, transparent 60%),
+                linear-gradient(180deg, ${BG_PRIMARY} 0%, ${BG_SECONDARY} 100%)
+              `,
+
+        fontFamily: "\"SF Pro Display\", -apple-system, BlinkMacSystemFont, \"PingFang SC\", \"Microsoft YaHei\", sans-serif",
         overflow: "hidden",
+        scale: 1.322
       }}
     >
       {/* 网格装饰 */}
