@@ -75,7 +75,7 @@ export const ConsumerDashboard: React.FC = () => {
 
         fontFamily: "\"SF Pro Display\", -apple-system, BlinkMacSystemFont, \"PingFang SC\", \"Microsoft YaHei\", sans-serif",
         overflow: "hidden",
-        scale: 1.322
+        scale: 1
       }}
     >
       {/* 网格装饰 */}

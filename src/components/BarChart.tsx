@@ -33,7 +33,7 @@ export const BarChart: React.FC<BarChartProps> = ({
         width: "100%",
         display: "flex",
         flexDirection: "column",
-        gap: 18,
+        gap: 27,
       }}
     >
       {data.map((item, index) => {
@@ -91,12 +91,13 @@ export const BarChart: React.FC<BarChartProps> = ({
             {/* 品类名 */}
             <div
               style={{
-                width: 140,
-                fontSize: 26,
+                width: 200,
+                fontSize: 23,
                 color: TEXT_PRIMARY,
                 fontWeight: 500,
                 flexShrink: 0,
                 whiteSpace: "nowrap",
+                letterSpacing: -0.5,
               }}
             >
               {item.name}
@@ -106,7 +107,7 @@ export const BarChart: React.FC<BarChartProps> = ({
             <div
               style={{
                 flex: 1,
-                height: 34,
+                height: 40,
                 position: "relative",
                 backgroundColor: bgAlpha(OP.subtle),
                 borderRadius: 4,
@@ -164,7 +165,7 @@ export const BarChart: React.FC<BarChartProps> = ({
             {/* 数值标签 */}
             <div
               style={{
-                width: 110,
+                width: 118,
                 flexShrink: 0,
                 textAlign: "right",
                 display: "flex",
