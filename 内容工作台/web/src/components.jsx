@@ -93,3 +93,61 @@ export function Seg({ options, value, onChange }) {
     </div>
   );
 }
+
+const escRe = (s) => s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+
+// 在正文里定位质检证据（先逐字找，再忽略空白差异找）
+function findRanges(text, evidence) {
+  const ev = String(evidence || '').trim();
+  if (!text || ev.length < 2) return [];
+  const out = [];
+  let from = 0;
+  for (;;) {
+    const i = text.indexOf(ev, from);
+    if (i < 0) break;
+    out.push([i, i + ev.length]);
+    from = i + ev.length;
+    if (out.length >= 20) break;
+  }
+  if (out.length) return out;
+  const re = new RegExp(escRe(ev).replace(/\\?\s+/g, '\\s*'), 'g');
+  let m;
+  while ((m = re.exec(text))) {
+    out.push([m.index, m.index + m[0].length]);
+    if (!m[0].length) re.lastIndex += 1;
+    if (out.length >= 20) break;
+  }
+  return out;
+}
+
+// 正文 + 质检问题句高亮：阻断=红，建议=黄
+export function HighlightedText({ text = '', items = [], className = 'raw-text' }) {
+  const spans = [];
+  for (const it of items || []) {
+    if (!it || it.level === 'info') continue;
+    for (const [s, e] of findRanges(text, it.evidence)) {
+      spans.push({ s, e, level: it.level, rule: it.rule, title: it.title });
+    }
+  }
+  spans.sort((a, b) => a.s - b.s || b.e - a.e || (a.level === 'block' ? -1 : 1));
+  const kept = [];
+  let end = -1;
+  for (const sp of spans) {
+    if (sp.s < end) continue;
+    kept.push(sp);
+    end = sp.e;
+  }
+  const nodes = [];
+  let last = 0;
+  kept.forEach((sp, i) => {
+    if (sp.s > last) nodes.push(text.slice(last, sp.s));
+    nodes.push(
+      <mark key={i} className={`hl ${sp.level}`} title={`${sp.rule || ''} ${sp.title || ''}`}>
+        {text.slice(sp.s, sp.e)}
+      </mark>
+    );
+    last = sp.e;
+  });
+  if (last < text.length) nodes.push(text.slice(last));
+  return <pre className={className}>{nodes}</pre>;
+}

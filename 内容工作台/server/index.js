@@ -604,7 +604,8 @@ app.post('/api/versions/:id/repair', async (req, reply) => {
   const wordlib = loadWordlib(settings.wordlib_path);
   const whitelist = db.prepare('SELECT * FROM whitelist').all();
   const t = getTopic(d.topic_id);
-  const maxRounds = Math.min(Math.max(Number(req.body?.rounds) || 3, 1), 3);
+  const only = Array.isArray(req.body?.rules) && req.body.rules.length ? req.body.rules : null;
+  const maxRounds = only ? 1 : Math.min(Math.max(Number(req.body?.rounds) || 3, 1), 3);
 
   const qcOnce = (text) => runQC({
     raw: text, platform: d.platform, contentType: t.content_type, topic: t,
@@ -618,20 +619,22 @@ app.post('/api/versions/:id/repair', async (req, reply) => {
   let lastError = '';
 
   for (let round = 1; round <= maxRounds; round += 1) {
-    const pending = curQC.items.filter((it) => it.level !== 'info');
+    // 指定 rules 时只处理这几条；否则处理全部阻断/建议
+    const pending = curQC.items.filter((it) => it.level !== 'info' && (!only || only.includes(it.rule)));
     if (!pending.length) break;
     const beforeBlock = curQC.stats.block || 0;
     let nextText = '';
     let mode = '';
 
     try {
-      // 前几轮只改质检点名的句子；最后一轮整篇重写兜底
-      if (round < maxRounds) {
+      // 定向修复只改质检点名的句子；仅"整体修复"的最后一轮才整篇重写
+      // 指定 rules 时永远只做定向，不整篇重写
+      if (only || round < maxRounds) {
         mode = 'targeted';
         const r = await repairTargeted({ platform: d.platform, rawText: curText, qcItems: pending });
         if (r.patches > 0) nextText = r.text;
       }
-      if (!nextText) {
+      if (!nextText && !only) {
         mode = 'full';
         nextText = await repairVersion({ platform: d.platform, rawText: curText, qcItems: pending, settings });
       }
@@ -651,6 +654,8 @@ app.post('/api/versions/:id/repair', async (req, reply) => {
     curText = nextText;
     curQC = nextQC;
     if (nextQC.conclusion === 'pass') break;
+    // 阻断清零就收工，建议项不强求（继续整篇重写通常只会改动更多原意）
+    if (!(nextQC.stats.block || 0)) break;
     // 整篇重写也没能减少阻断，才停；定向多轮无效时留给最后一轮整篇兜底
     if (mode === 'full' && round >= 2 && (nextQC.stats.block || 0) >= beforeBlock) break;
   }
@@ -658,7 +663,12 @@ app.post('/api/versions/:id/repair', async (req, reply) => {
   const improved = rounds.some((r) => r.changed !== false && (r.block !== undefined));
   if (!improved) {
     if (lastError) return reply.code(502).send({ error: lastError, rounds });
-    return reply.code(400).send({ error: 'AI 没能定位到可改的句子（可能问题在结构或整体层面），请手动修改这一版', rounds });
+    return reply.code(400).send({
+      error: only
+        ? '这条问题是整体层面的（不是某一句），AI 定向修复改不了，请用「手动编辑」'
+        : 'AI 没能定位到可改的句子（可能问题在结构或整体层面），请手动修改这一版',
+      rounds,
+    });
   }
 
   // 存新版本

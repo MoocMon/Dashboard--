@@ -221,6 +221,13 @@ textarea { resize: vertical; line-height: 1.6; }
 .more-box { border: 1px dashed var(--line2); border-radius: 8px; padding: 10px 12px; margin-bottom: 12px; display: flex; flex-direction: column; gap: 6px; background: #fcfcfa; }
 .metrics { display: flex; gap: 12px; font-family: var(--mono); font-size: 11.5px; color: var(--ink3); border-bottom: 1px dashed var(--line); padding-bottom: 8px; }
 .raw-text { font-size: 13.5px; line-height: 1.8; color: var(--ink); background: #fcfcfa; border: 1px solid var(--line); border-radius: 8px; padding: 14px 16px; max-height: 560px; overflow: auto; font-family: inherit; }
+.raw-text mark.hl { padding: 1px 1px; border-radius: 3px; color: inherit; cursor: help; }
+.raw-text mark.hl.block { background: var(--risk-soft); box-shadow: inset 0 -2px 0 rgba(165, 63, 54, .55); }
+.raw-text mark.hl.suggest { background: var(--warn-soft); box-shadow: inset 0 -2px 0 rgba(168, 100, 27, .5); }
+.hl-legend { display: flex; align-items: center; gap: 8px; margin-bottom: 8px; }
+.hl-tag { font-size: 11.5px; font-weight: 600; padding: 1px 8px; border-radius: 999px; }
+.hl-tag.block { color: var(--risk); background: var(--risk-soft); }
+.hl-tag.suggest { color: var(--warn); background: var(--warn-soft); }
 .editor { font-size: 13.5px; line-height: 1.75; min-height: 260px; }
 .struct-warn { background: var(--risk-soft); border: 1px solid #ecc9c4; border-radius: 8px; padding: 10px 12px; font-size: 12.5px; color: #7c3029; display: flex; flex-direction: column; gap: 3px; }
 .qc-mini { font-size: 11.5px; color: var(--ink3); }

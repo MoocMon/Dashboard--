@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { api, PLATFORM, fmtTime, LEVEL } from '../api.js';
-import { Modal, Field, Pill, CopyBtn, Empty, StatusDot } from '../components.jsx';
+import { Modal, Field, Pill, CopyBtn, Empty, StatusDot, HighlightedText } from '../components.jsx';
 
 function parseOutlineSections(text) {
   const out = {};
@@ -277,7 +277,23 @@ export default function CreateTab({ data, reload, notify, llm }) {
 
               {editor === null ? (
                 <>
-                  <pre className="raw-text">{detail.current.raw_text}</pre>
+                  {(() => {
+                    const items = (detail.current.qc?.items || []).filter((it) => it.level !== 'info');
+                    const nb = items.filter((it) => it.level === 'block').length;
+                    const ns = items.filter((it) => it.level === 'suggest').length;
+                    return (
+                      <>
+                        {items.length > 0 && (
+                          <div className="hl-legend">
+                            <span className="hl-tag block">阻断 {nb}</span>
+                            <span className="hl-tag suggest">建议 {ns}</span>
+                            <span className="dim">正文里标色的句子就是质检点名的问题句</span>
+                          </div>
+                        )}
+                        <HighlightedText text={detail.current.raw_text} items={items} />
+                      </>
+                    );
+                  })()}
                   <div className="inline">
                     <button className="btn ghost small" onClick={() => setEditor(detail.current.raw_text)}>编辑</button>
                     <button className="btn small" onClick={runQc}>跑质检</button>

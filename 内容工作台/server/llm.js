@@ -167,14 +167,26 @@ function locateInText(rawText, evidence) {
   return m2 ? m2[0] : '';
 }
 
+// 取片段里的最后一句（结尾类规则只需要改最后一句，别把整段都换掉）
+function lastSentence(s) {
+  const t = String(s || '').trim();
+  const parts = t.split(/(?<=[。！？!?])/).map((x) => x.trim()).filter(Boolean);
+  return parts.length > 1 ? parts[parts.length - 1] : '';
+}
+
 // 定向修复：只让 AI 重写质检指出的问题句，返回替换后的全文
 export async function repairTargeted({ platform, rawText, qcItems }) {
   // 同一个片段可能被多条规则点名（如 C1+C2 都指向结尾），合并成一次改写
   const targets = [];
   for (const it of qcItems) {
     if (it.level === 'info') continue;
-    const snippet = locateInText(rawText, it.evidence);
+    let snippet = locateInText(rawText, it.evidence);
     if (snippet.length < 4) continue;
+    // 结尾类规则只替换最后一句，避免把整段（含钩子/步骤）一起换掉
+    if (/^(C1|C2|C4)$/.test(it.rule || '')) {
+      const tail = lastSentence(snippet);
+      if (tail.length >= 4 && rawText.includes(tail)) snippet = tail;
+    }
     const exist = targets.find((x) => x.snippet === snippet);
     if (exist) { exist.items.push(it); continue; }
     targets.push({ snippet, items: [it] });
@@ -270,8 +282,15 @@ export async function repairVersion({ platform, rawText, qcItems, settings }) {
   };
 
   let platformHint = '';
-  if (platform === 'douyin') platformHint = '抖音口播脚本，格式必须保留 ## 分镜脚本 / ## 场次表 / ## 纯口播稿 三个顶层章节；时长 3–5 分钟。';
-  else if (platform === 'xhs') platformHint = '小红书笔记，格式必须保留 ## 标题 / ## 正文 / ## 配图建议 / ## 话题标签；正文 300–800 字。';
+  if (platform === 'douyin') {
+    const cps = Number(settings?.chars_per_sec) || 7;
+    const minSec = Number(settings?.douyin_min_sec) || 180;
+    const maxSec = Number(settings?.douyin_max_sec) || 300;
+    const tol = settings?.tolerance != null ? Number(settings.tolerance) : 0.1;
+    const minChars = Math.round(minSec * cps * (1 - tol));
+    const maxChars = Math.round(maxSec * cps * (1 + tol));
+    platformHint = `抖音口播脚本，格式必须保留 ## 分镜脚本 / ## 场次表 / ## 纯口播稿 三个顶层章节。纯口播稿必须 ${minChars}–${maxChars} 字（当前 ${String(rawText || '').length} 字，需要扩写或压缩到区间内），单句不超过 40 字，场次表行数不少于口播段数。`;
+  } else if (platform === 'xhs') platformHint = '小红书笔记，格式必须保留 ## 标题 / ## 正文 / ## 配图建议 / ## 话题标签；正文 300–800 字。';
   else if (platform === 'wechat') platformHint = '公众号长文，格式必须保留 ## 标题 / ## 开篇 / ## 正文 / ## 结尾；1500–3000 字，## 正文下的 ### 小标题不能丢。';
 
   const qcBlockText = blocks.length ? `【阻断项（必须全部修）】\n${blocks.map(formatItem).join('\n')}\n` : '';

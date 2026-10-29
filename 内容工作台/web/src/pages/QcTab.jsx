@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { api, PLATFORM, LEVEL, fmtTime } from '../api.js';
-import { Empty, Pill, CopyBtn, StatusDot } from '../components.jsx';
+import { Empty, Pill, CopyBtn, StatusDot, Modal } from '../components.jsx';
 
 const GATES = [
   { n: 1, name: '① 结构' },
@@ -16,6 +16,9 @@ export default function QcTab({ data, reload, notify }) {
   const [detail, setDetail] = useState(null);
   const [running, setRunning] = useState(false);
   const [viewVersion, setViewVersion] = useState(null);
+  const [repairing, setRepairing] = useState(false);
+  const [fixingRule, setFixingRule] = useState(null);
+  const [editor, setEditor] = useState(null);
 
   const load = async () => {
     if (!draft) return;
@@ -45,6 +48,42 @@ export default function QcTab({ data, reload, notify }) {
   const version = viewVersion === detail.current.id ? detail.current : detail.versions.find((v) => v.id === viewVersion);
   const isCurrent = version?.id === detail.current.id;
   const report = isCurrent ? detail.current.qc : null;
+
+  // AI 修复：不传 rules = 全部问题（定向多轮 + 整篇兜底）；传 rules = 只修这几条
+  const aiRepair = async (rules) => {
+    const v = detail?.current;
+    if (!v) return;
+    if (rules) setFixingRule(rules[0]);
+    else setRepairing(true);
+    try {
+      const r = await api.post(`/api/versions/${v.id}/repair`, rules ? { rules } : { rounds: 3 });
+      setViewVersion(r.version.id);
+      await load();
+      await reload();
+      const qc = r.qc || {};
+      const sb = qc.stats?.block ?? 0;
+      const ss = qc.stats?.suggest ?? 0;
+      notify(
+        `v${r.version.version_no} 已生成 · 阻断 ${sb} / 建议 ${ss}${qc.conclusion === 'pass' ? ' ✅ 通过' : ''}`,
+        qc.conclusion === 'block' ? 'err' : 'ok',
+      );
+    } catch (e) {
+      notify(e.message, 'err');
+    } finally {
+      setRepairing(false);
+      setFixingRule(null);
+    }
+  };
+
+  const saveEdit = async () => {
+    try {
+      const r = await api.put(`/api/versions/${detail.current.id}`, { raw_text: editor });
+      setEditor(null);
+      await load();
+      await reload();
+      notify(`已保存 v${r.version.version_no}${r.structure?.ok ? '，结构通过' : '，结构未通过'}，记得重新跑质检`);
+    } catch (e) { notify(e.message, 'err'); }
+  };
 
   const ignore = async (item) => {
     const reason = window.prompt(`忽略「${item.rule} ${item.title}」的理由（会记录）`);
@@ -98,6 +137,15 @@ export default function QcTab({ data, reload, notify }) {
           <div className="stack">
             <p className="hint">四闸顺序固定：结构 → 去 AI 味 → 转化收尾 → 违禁词。结构未通过时不跑后三闸。</p>
             <button className="btn primary" disabled={running || !isCurrent} onClick={run}>{running ? '质检中…' : '对新版本跑质检'}</button>
+            <div className="inline">
+              <button
+                className="btn"
+                disabled={repairing || !report || report.conclusion === 'pass'}
+                onClick={() => aiRepair(null)}
+                title={!report ? '先跑质检' : report.conclusion === 'pass' ? '已经通过' : 'AI 定向修问题句，修不好自动整篇兜底'}
+              >{repairing ? 'AI 修复中…' : '🤖 AI 修复全部'}</button>
+              <button className="btn ghost" disabled={!isCurrent} onClick={() => setEditor(detail.current.raw_text)}>✎ 手动编辑</button>
+            </div>
             {report && <CopyBtn text={copyList()} label="复制问题清单" />}
           </div>
         </div>
@@ -140,6 +188,12 @@ export default function QcTab({ data, reload, notify }) {
                       {it.evidence && <div className="qi-evidence">{it.evidence}</div>}
                       {it.suggestion && <div className="qi-suggest">→ {it.suggestion}</div>}
                       <div className="qi-foot">
+                        {it.level !== 'info' && (
+                          <button className="link" disabled={!!fixingRule || repairing} onClick={() => aiRepair([it.rule])}>
+                            {fixingRule === it.rule ? 'AI 修复中…' : 'AI 修这条'}
+                          </button>
+                        )}
+                        <button className="link" onClick={() => setEditor(detail.current.raw_text)}>手动改</button>
                         <button className="link" onClick={() => ignore(it)}>忽略并填理由</button>
                         <CopyBtn text={`${it.rule} ${it.title}\n位置：${it.location}\n证据：${it.evidence}\n建议：${it.suggestion}`} label="复制这条" />
                       </div>
@@ -152,6 +206,24 @@ export default function QcTab({ data, reload, notify }) {
           </>
         )}
       </div>
+
+      {editor !== null && (
+        <Modal
+          title={`手动编辑 v${detail.current.version_no}`}
+          width={900}
+          onClose={() => setEditor(null)}
+          footer={
+            <>
+              <span className="dim">{editor.length} 字符</span>
+              <button className="btn ghost" onClick={() => setEditor(null)}>取消</button>
+              <button className="btn primary" onClick={saveEdit}>保存为新版本</button>
+            </>
+          }
+        >
+          <textarea className="editor" rows={26} value={editor} onChange={(e) => setEditor(e.target.value)} />
+          <p className="hint">改完保存会生成一个新版本；点「对新版本跑质检」复核。只想让 AI 改某一句，用问题项里的「AI 修这条」。</p>
+        </Modal>
+      )}
     </div>
   );
 }
