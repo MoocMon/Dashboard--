@@ -19,7 +19,15 @@ if [ ! -d node_modules ]; then
   fi
 fi
 
+need_build=0
 if [ ! -f web/dist/index.html ]; then
+  need_build=1
+elif [ -n "$(find web/src web/index.html -type f -newer web/dist/index.html 2>/dev/null | head -n 1)" ]; then
+  echo "检测到界面源码有更新，重新构建..."
+  need_build=1
+fi
+
+if [ "$need_build" = "1" ]; then
   echo "正在构建前端界面..."
   if ! npm run build; then
     echo "前端构建失败。"
