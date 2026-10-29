@@ -42,11 +42,15 @@ export default function ArchiveTab({ data, reload, notify }) {
                 质检：{d.qc ? (d.qc.conclusion === 'block' ? '有阻断（不可归档）' : d.qc.conclusion === 'warn' ? '有建议（可归档）' : '通过') : '未质检'}
               </div>
               {d.archived ? (
-                <div className="arch-path">{d.archived.path}<div className="dim">{fmtTime(d.archived.created_at)}</div></div>
+                <div className="arch-path">
+                  {d.archived.path}
+                  <div className="dim">{fmtTime(d.archived.created_at)}</div>
+                  {!d.archived.exists && <div className="err-text">文件已丢失（被移动或删除），点下面的按钮重新写入。</div>}
+                </div>
               ) : null}
               <button className="btn primary small" disabled={busy || !d.current_version || d.qc?.conclusion === 'block' || !d.qc}
                 onClick={() => doArchive(d, 'abort')}>
-                {d.archived ? '重新写入（校验指纹）' : '归档到 Obsidian'}
+                {d.archived ? (d.archived.exists ? '重新写入（校验指纹）' : '重新写入（文件丢失）') : '归档到 Obsidian'}
               </button>
               {!d.qc && <p className="hint">先完成质检才能归档。</p>}
               {d.qc?.conclusion === 'block' && <p className="hint err-text">有阻断项，处理或忽略后才可归档。</p>}
@@ -59,7 +63,10 @@ export default function ArchiveTab({ data, reload, notify }) {
           {archives.length === 0 ? <p className="hint">还没有归档记录。</p> : archives.map((a) => (
             <div key={a.id} className="arch-row">
               <div className="arch-path">{a.path}</div>
-              <div className="dim">{fmtTime(a.created_at)} · 指纹 {a.fingerprint}</div>
+              <div className="dim">
+                {fmtTime(a.created_at)} · 指纹 {a.fingerprint}
+                {!a.exists && <span className="err-text"> · 文件已丢失</span>}
+              </div>
             </div>
           ))}
         </div>

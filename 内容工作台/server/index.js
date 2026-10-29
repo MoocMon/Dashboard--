@@ -77,7 +77,7 @@ function draftCards(topicId) {
       version_count: versions.length,
       current_version: cur ? { id: cur.id, version_no: cur.version_no, created_at: cur.created_at, origin: cur.origin } : null,
       qc: qc ? { id: qc.id, conclusion: qc.conclusion, stats: J(qc.stats, {}), created_at: qc.created_at, stale: !!qc.stale } : null,
-      archived: arc ? { path: arc.path, created_at: arc.created_at } : null,
+      archived: arc ? { path: arc.path, created_at: arc.created_at, exists: fs.existsSync(arc.path) } : null,
     };
   });
 }
@@ -200,7 +200,8 @@ app.get('/api/topics/:id', async (req, reply) => {
   const mats = materialsOf(t.id);
   const outline = outlineOf(t.id);
   const drafts = draftCards(t.id);
-  const archives = db.prepare('SELECT * FROM archives WHERE topic_id = ? ORDER BY created_at DESC').all(t.id);
+  const archives = db.prepare('SELECT * FROM archives WHERE topic_id = ? ORDER BY created_at DESC').all(t.id)
+    .map((a) => ({ ...a, exists: fs.existsSync(a.path) }));
   return {
     topic: topicView(t),
     materials: mats.map((m) => ({ ...m, snippet: m.snippet_id ? db.prepare('SELECT id,text FROM snippets WHERE id=?').get(m.snippet_id) : null })),
@@ -259,8 +260,21 @@ app.delete('/api/topics/:id', async (req, reply) => {
   const t = getTopic(req.params.id);
   if (!t) return reply.code(404).send({ error: '选题不存在' });
   const archived = db.prepare('SELECT COUNT(*) c FROM archives WHERE topic_id=?').get(t.id).c;
-  db.prepare('DELETE FROM topics WHERE id=?').run(t.id);
-  log('topic', t.id, 'delete', archived ? '已归档选题删除索引，Obsidian 文件保留' : '');
+  // 连带清理选题下所有稿件数据，避免留下指向已删文件的归档记录
+  db.transaction(() => {
+    const draftsOfTopic = 'SELECT id FROM drafts WHERE topic_id=?';
+    db.prepare(`DELETE FROM qc_ignores WHERE report_id IN (SELECT id FROM qc_reports WHERE draft_id IN (${draftsOfTopic}))`).run(t.id);
+    db.prepare(`DELETE FROM qc_reports WHERE draft_id IN (${draftsOfTopic})`).run(t.id);
+    db.prepare(`DELETE FROM versions WHERE draft_id IN (${draftsOfTopic})`).run(t.id);
+    db.prepare('DELETE FROM archives WHERE topic_id=?').run(t.id);
+    db.prepare('DELETE FROM drafts WHERE topic_id=?').run(t.id);
+    db.prepare('DELETE FROM outlines WHERE topic_id=?').run(t.id);
+    db.prepare('DELETE FROM materials WHERE topic_id=?').run(t.id);
+    db.prepare('DELETE FROM schedule WHERE topic_id=?').run(t.id);
+    db.prepare('DELETE FROM candidates WHERE topic_id=?').run(t.id);
+    db.prepare('DELETE FROM topics WHERE id=?').run(t.id);
+  })();
+  log('topic', t.id, 'delete', archived ? '已清理归档记录，Obsidian 文件保留' : '');
   return { ok: true, keptObsidianFiles: archived > 0 };
 });
 
@@ -774,16 +788,27 @@ app.post('/api/versions/:id/archive', async (req, reply) => {
   if (!qc) return reply.code(409).send({ error: '该版本尚未质检，不可归档' });
   if (qc.conclusion === 'block') return reply.code(409).send({ error: '质检存在阻断项，不可归档。请逐条处理或忽略并填理由。' });
   const settings = allSettings();
-  const result = archiveVersion({ topic: t, draft: d, version: { ...v, parsed: J(v.parsed, {}) }, qc, settings, mode: req.body?.mode || 'abort' });
-  if (result.status === 'need-dir') {
-    if (!req.body?.createDir) return reply.code(409).send({ error: `Obsidian 目录不存在：${result.dir}`, status: 'need-dir', dir: result.dir });
-    fs.mkdirSync(result.dir, { recursive: true });
-    return { ...archiveVersion({ topic: t, draft: d, version: { ...v, parsed: J(v.parsed, {}) }, qc, settings, mode: req.body?.mode || 'abort' }), createdDir: result.dir };
+  const payload = { topic: t, draft: d, version: { ...v, parsed: J(v.parsed, {}) }, qc, settings, mode: req.body?.mode || 'abort' };
+  try {
+    const result = archiveVersion(payload);
+    if (result.status === 'need-dir') {
+      if (!req.body?.createDir) return reply.code(409).send({ error: `Obsidian 目录不存在：${result.dir}`, status: 'need-dir', dir: result.dir });
+      fs.mkdirSync(result.dir, { recursive: true });
+      return { ...archiveVersion(payload), createdDir: result.dir };
+    }
+    if (result.status === 'conflict') return reply.code(409).send({ ...result, error: '本地文件已被手改，指纹不一致' });
+    if (result.status === 'same') return { ...result, message: '已归档，内容一致' };
+    log('archive', d.id, 'write', result.path);
+    return result;
+  } catch (e) {
+    if (['EACCES', 'EPERM', 'EROFS'].includes(e.code)) {
+      return reply.code(409).send({
+        status: 'no-perm',
+        error: `没有权限写入 Obsidian 目录：${baseDir(settings)}\n请用桌面的「启动工作台.command」或项目里的「启动.command」启动服务（不要在编辑器/Agent 里启动），或在系统设置里给终端授予「文稿文件夹」访问权限。`,
+      });
+    }
+    throw e;
   }
-  if (result.status === 'conflict') return reply.code(409).send({ ...result, error: '本地文件已被手改，指纹不一致' });
-  if (result.status === 'same') return { ...result, message: '已归档，内容一致' };
-  log('archive', d.id, 'write', result.path);
-  return result;
 });
 
 // ---------------- 排期 ----------------
