@@ -117,7 +117,7 @@ export default function CreateTab({ data, reload, notify, llm }) {
     if (!llm?.enabled) return notify('AI 自动修复需要先启用 LLM（设置页）', 'err');
     setRepairing(true);
     try {
-      const r = await api.post(`/api/versions/${v.id}/repair`);
+      const r = await api.post(`/api/versions/${v.id}/repair`, { rounds: 3 });
       const prevQc = v.qc;
       const newQc = r.qc;
       const improved = (prevQc?.stats?.block || 0) - (newQc?.stats?.block || 0);
@@ -125,12 +125,16 @@ export default function CreateTab({ data, reload, notify, llm }) {
       setQcResult(newQc);
       await loadDetail();
       await reload();
-      const parts = [`v${r.version.version_no} 已生成`];
+      const rounds = (r.rounds || []).filter((x) => x.block !== undefined).length;
+      const parts = [`v${r.version.version_no} 已生成`, `${rounds} 轮`];
       if (improved > 0) parts.push(`阻断 -${improved}`);
+      else if (newQc.stats.block > 0) parts.push(`仍有阻断 ${newQc.stats.block}`);
       if (sugImproved > 0) parts.push(`建议 -${sugImproved}`);
-      notify(parts.join(' · ') + (newQc.conclusion === 'pass' ? ' ✅ 通过' : ''));
-    } catch (e) { notify(e.message, 'err'); }
-    finally { setRepairing(false); }
+      notify(parts.join(' · ') + (newQc.conclusion === 'pass' ? ' ✅ 通过' : ''), newQc.conclusion === 'block' ? 'err' : 'ok');
+    } catch (e) {
+      notify(e.message, 'err');
+      await loadDetail();
+    } finally { setRepairing(false); }
   };
 
   const saveEdit = async () => {

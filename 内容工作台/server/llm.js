@@ -150,6 +150,110 @@ export async function testLLM() {
   }
 }
 
+// 把质检给的证据定位成原文里的真实片段（容忍空白差异、多段拼接）
+function locateInText(rawText, evidence) {
+  const ev = String(evidence || '').trim();
+  if (ev.length < 4) return '';
+  if (rawText.includes(ev)) return ev;
+  const esc = (s) => s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+  const flexible = (s) => new RegExp(esc(s).replace(/\\?\s+/g, '\\s*'));
+  const m = rawText.match(flexible(ev));
+  if (m) return m[0];
+  // 证据常是前两段用 \n 拼起来的，原文段落间可能还有空行 → 退回第一段
+  const firstLine = ev.split('\n').map((s) => s.trim()).filter(Boolean)[0] || '';
+  if (firstLine.length < 4) return '';
+  if (rawText.includes(firstLine)) return firstLine;
+  const m2 = rawText.match(flexible(firstLine));
+  return m2 ? m2[0] : '';
+}
+
+// 定向修复：只让 AI 重写质检指出的问题句，返回替换后的全文
+export async function repairTargeted({ platform, rawText, qcItems }) {
+  // 同一个片段可能被多条规则点名（如 C1+C2 都指向结尾），合并成一次改写
+  const targets = [];
+  for (const it of qcItems) {
+    if (it.level === 'info') continue;
+    const snippet = locateInText(rawText, it.evidence);
+    if (snippet.length < 4) continue;
+    const exist = targets.find((x) => x.snippet === snippet);
+    if (exist) { exist.items.push(it); continue; }
+    targets.push({ snippet, items: [it] });
+    if (targets.length >= 6) break;
+  }
+  if (!targets.length) return { text: rawText, patches: 0 };
+
+  const ruleHint = (rule) => {
+    if (rule === 'H1') return '必须重写成一句 ≤40 字的话，同时命中至少两项：具体场景（含"在/当/打开/下班/工位/电脑前"等场景词）、反差冲突（含"但是/却/结果/没想到/不是…而是"或问号）、强主张（含"别/不要/必须/真正/才是/根本"）；禁止"大家好/今天分享"式开头。';
+    if (rule === 'H3') return '拆成两句话，每句 ≤40 字，保留原意，不要新增事实。';
+    if (rule === 'H2') return '在保持原意的前提下调整长度，使其落在目标字数区间。';
+    if (/^C\d$/.test(rule)) return '改写结尾，必须包含评论召唤 + 关注或下期钩子，不要照抄原句。';
+    if (rule === 'V1') return '删除或换掉敏感表达，保持原意；不得用拼音、谐音、空格等方式规避。';
+    return '按建议改写，不改动事实与数据。';
+  };
+
+  const list = targets.map((t, i) => {
+    const title = t.items.map((it) => `${it.rule || ''} ${it.title || ''}`.trim()).join('；');
+    const sug = t.items.map((it) => it.suggestion).filter(Boolean).join('；');
+    const hints = [...new Set(t.items.map((it) => ruleHint(it.rule)))].join(' 另外：');
+    return [
+      `${i + 1}. 问题：${title}`,
+      `   原文片段：${t.snippet}`,
+      sug ? `   质检建议：${sug}` : '',
+      `   改写要求：${hints}`,
+    ].filter(Boolean).join('\n');
+  }).join('\n\n');
+
+  const user = [
+    '下面是一篇内容里被质检判定有问题的句子。请只重写这些句子，其余内容一个字都不要动。',
+    '',
+    '## 待修句子',
+    list,
+    '',
+    '## 上下文（仅供理解，不要整体重写，不要输出）',
+    rawText.slice(0, 3000),
+    '',
+    '## 输出格式',
+    '只输出一个 JSON 数组，不要任何解释、不要代码块标记：',
+    '[{"i":1,"replace":"<第 1 条改写后的句子>"}]',
+    'i 是上面待修句子的编号；replace 只写替换后的这一句，不要带上下文、不要重复原文。',
+  ].join('\n');
+
+  const out = await callLLM({
+    system: '你是严谨的文字编辑。只输出 JSON 数组，不要任何解释。',
+    user,
+    temperature: 0.3,
+  });
+
+  const patches = parsePatches(out);
+  let text = rawText;
+  let applied = 0;
+  for (const p of patches) {
+    const replace = String(p.replace || '').trim();
+    if (!replace) continue;
+    let snippet = '';
+    const idxNo = Number(p.i);
+    if (Number.isInteger(idxNo) && idxNo >= 1 && idxNo <= targets.length) snippet = targets[idxNo - 1].snippet;
+    if (!snippet && p.find) snippet = locateInText(text, p.find) || String(p.find).trim();
+    if (!snippet || snippet.length < 4 || replace === snippet) continue;
+    const at = text.lastIndexOf(snippet);
+    if (at < 0) continue;
+    text = text.slice(0, at) + replace + text.slice(at + snippet.length);
+    applied += 1;
+  }
+  return { text, patches: applied };
+}
+
+function parsePatches(out) {
+  const s = String(out || '').replace(/```json|```/g, '').trim();
+  const tryParse = (str) => { try { const v = JSON.parse(str); return Array.isArray(v) ? v : null; } catch { return null; } };
+  const direct = tryParse(s);
+  if (direct) return direct;
+  const a = s.indexOf('[');
+  const b = s.lastIndexOf(']');
+  if (a >= 0 && b > a) return tryParse(s.slice(a, b + 1)) || [];
+  return [];
+}
+
 // 构建修复 Prompt + 调 LLM 修
 export async function repairVersion({ platform, rawText, qcItems, settings }) {
   const blocks = qcItems.filter((it) => it.level === 'block');

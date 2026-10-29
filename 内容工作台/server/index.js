@@ -11,7 +11,7 @@ import { buildPrompt, activePrompt, promptVersions, varsIn, materialDigest, plat
 import { archiveVersion, baseDir } from './archive.js';
 import { fetchUrl, parseUpload } from './parsers.js';
 import { importRadar } from './radar.js';
-import { callLLM, testLLM, llmStatus, getPresets, repairVersion } from './llm.js';
+import { callLLM, testLLM, llmStatus, getPresets, repairVersion, repairTargeted } from './llm.js';
 
 seed();
 const app = Fastify({ logger: { level: 'warn' }, bodyLimit: 30 * 1024 * 1024 });
@@ -599,47 +599,88 @@ app.post('/api/versions/:id/repair', async (req, reply) => {
   const d = db.prepare('SELECT * FROM drafts WHERE id=?').get(v.draft_id);
   const qc = latestQC(v.id);
   if (!qc) return reply.code(400).send({ error: '该版本还没跑过质检，没东西可修' });
-  const items = J(qc.items, []);
   const settings = allSettings();
-
-  let repaired;
-  try {
-    repaired = await repairVersion({ platform: d.platform, rawText: v.raw_text, qcItems: items, settings });
-  } catch (e) {
-    return reply.code(502).send({ error: e.message });
-  }
-
-  if (!repaired.trim()) return reply.code(400).send({ error: 'AI 修复返回空内容' });
-
-  // 存新版本
-  const { parsed, structure } = parseByPlatform(d.platform, repaired);
-  const maxNo = db.prepare('SELECT MAX(version_no) m FROM versions WHERE draft_id=?').get(d.id).m;
-  const id = uid('vs');
-  db.prepare('INSERT INTO versions(id,draft_id,version_no,raw_text,parsed,structure,origin,prompt_snapshot,note,created_at) VALUES(?,?,?,?,?,?,?,?,?,?)')
-    .run(id, d.id, maxNo + 1, repaired, JSON.stringify(parsed), JSON.stringify(structure), 'repair', '', `AI 修复自 v${v.version_no}（${items.filter(it=>it.level==='block').length} 阻断 / ${items.filter(it=>it.level==='suggest').length} 建议）`, now());
-  db.prepare('UPDATE drafts SET current_version_id=?, updated_at=? WHERE id=?').run(id, now(), d.id);
-  log('version', id, 'repair', `from v${v.version_no}`);
-
-  // 自动再跑一次质检
   const rules = rulesMap();
   const wordlib = loadWordlib(settings.wordlib_path);
   const whitelist = db.prepare('SELECT * FROM whitelist').all();
   const t = getTopic(d.topic_id);
-  const qcResult = runQC({
-    raw: repaired, platform: d.platform, contentType: t.content_type, topic: t,
+  const maxRounds = Math.min(Math.max(Number(req.body?.rounds) || 3, 1), 3);
+
+  const qcOnce = (text) => runQC({
+    raw: text, platform: d.platform, contentType: t.content_type, topic: t,
     materials: materialsOf(t.id), rules, whitelist, wordlib, settings,
     outline: outlineOf(t.id), ad: !!d.ad, sponsor: !!d.sponsor,
   });
+
+  let curText = v.raw_text;
+  let curQC = qcOnce(curText);
+  const rounds = [];
+  let lastError = '';
+
+  for (let round = 1; round <= maxRounds; round += 1) {
+    const pending = curQC.items.filter((it) => it.level !== 'info');
+    if (!pending.length) break;
+    const beforeBlock = curQC.stats.block || 0;
+    let nextText = '';
+    let mode = '';
+
+    try {
+      // 前几轮只改质检点名的句子；最后一轮整篇重写兜底
+      if (round < maxRounds) {
+        mode = 'targeted';
+        const r = await repairTargeted({ platform: d.platform, rawText: curText, qcItems: pending });
+        if (r.patches > 0) nextText = r.text;
+      }
+      if (!nextText) {
+        mode = 'full';
+        nextText = await repairVersion({ platform: d.platform, rawText: curText, qcItems: pending, settings });
+      }
+    } catch (e) {
+      lastError = e.message;
+      rounds.push({ round, mode, error: e.message });
+      break;
+    }
+
+    if (!nextText || nextText.trim() === curText.trim()) {
+      rounds.push({ round, mode, changed: false });
+      break;
+    }
+
+    const nextQC = qcOnce(nextText);
+    rounds.push({ round, mode, block: nextQC.stats.block || 0, suggest: nextQC.stats.suggest || 0, conclusion: nextQC.conclusion });
+    curText = nextText;
+    curQC = nextQC;
+    if (nextQC.conclusion === 'pass') break;
+    // 整篇重写也没能减少阻断，才停；定向多轮无效时留给最后一轮整篇兜底
+    if (mode === 'full' && round >= 2 && (nextQC.stats.block || 0) >= beforeBlock) break;
+  }
+
+  const improved = rounds.some((r) => r.changed !== false && (r.block !== undefined));
+  if (!improved) {
+    if (lastError) return reply.code(502).send({ error: lastError, rounds });
+    return reply.code(400).send({ error: 'AI 没能定位到可改的句子（可能问题在结构或整体层面），请手动修改这一版', rounds });
+  }
+
+  // 存新版本
+  const id = uid('vs');
+  const maxNo = db.prepare('SELECT MAX(version_no) m FROM versions WHERE draft_id=?').get(d.id).m;
+  const roundNote = rounds.map((r) => `第${r.round}轮${r.mode === 'targeted' ? '定向' : '整篇'}→阻断${r.block ?? '-'}/建议${r.suggest ?? '-'}`).join('；');
+  db.prepare('INSERT INTO versions(id,draft_id,version_no,raw_text,parsed,structure,origin,prompt_snapshot,note,created_at) VALUES(?,?,?,?,?,?,?,?,?,?)')
+    .run(id, d.id, maxNo + 1, curText, JSON.stringify(curQC.parsed || {}), JSON.stringify(curQC.structure || {}), 'repair', '', `AI 修复自 v${v.version_no}（${roundNote}）`, now());
+  db.prepare('UPDATE drafts SET current_version_id=?, updated_at=? WHERE id=?').run(id, now(), d.id);
+  log('version', id, 'repair', `from v${v.version_no} rounds=${rounds.length}`);
+
   const qcId = uid('qc');
   db.prepare('INSERT INTO qc_reports(id,draft_id,version_id,platform,content_type,conclusion,stats,items,rules_fingerprint,created_at) VALUES(?,?,?,?,?,?,?,?,?,?)')
-    .run(qcId, d.id, id, d.platform, t.content_type || '', qcResult.conclusion, JSON.stringify(qcResult.stats), JSON.stringify(qcResult.items), cryptoFingerprint(rules), now());
-  qcResult.id = qcId;
-  log('qc', qcId, 'repair-run', `conclusion=${qcResult.conclusion}`);
+    .run(qcId, d.id, id, d.platform, t.content_type || '', curQC.conclusion, JSON.stringify(curQC.stats), JSON.stringify(curQC.items), cryptoFingerprint(rules), now());
+  curQC.id = qcId;
+  log('qc', qcId, 'repair-run', `conclusion=${curQC.conclusion}`);
 
   return {
     version: db.prepare('SELECT * FROM versions WHERE id=?').get(id),
-    structure,
-    qc: { ...qcResult, stats: qcResult.stats, items: qcResult.items },
+    structure: curQC.structure,
+    qc: { ...curQC, stats: curQC.stats, items: curQC.items },
+    rounds,
   };
 });
 
