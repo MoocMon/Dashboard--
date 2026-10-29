@@ -7,7 +7,7 @@ SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
 if [ -f "$SCRIPT_DIR/server/index.js" ]; then
   PROJ="$SCRIPT_DIR"
 else
-  PROJ="/Users/liz/Documents/Trae-CN/内容工作台"
+  PROJ="/Users/liz/Desktop/Dashboard/内容工作台"
 fi
 
 echo "项目目录：$PROJ"
