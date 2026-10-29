@@ -1,0 +1,822 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>多平台内容生产工作台 · 产品需求方案 v0.3（定稿）</title>
+<style>
+  :root{
+    --bg:#f7f7f5; --panel:#ffffff; --ink:#1c1d1b; --ink-2:#4a4d48; --ink-3:#7b807a;
+    --line:#e3e2dc; --line-2:#d2d1c9;
+    --accent:#2f6b4f; --accent-soft:#e8f0ea;
+    --warn:#a8641b; --warn-soft:#fbf0e2;
+    --risk:#a53f36; --risk-soft:#fbeae8;
+    --info:#33587a; --info-soft:#e9f0f6;
+    --mono:ui-monospace,SFMono-Regular,"SF Mono",Menlo,monospace;
+  }
+  *{box-sizing:border-box}
+  html{scroll-behavior:smooth}
+  body{margin:0; background:var(--bg); color:var(--ink);
+    font-family:-apple-system,BlinkMacSystemFont,"PingFang SC","Hiragino Sans GB","Microsoft YaHei",sans-serif;
+    font-size:15px; line-height:1.75; -webkit-font-smoothing:antialiased}
+  .wrap{max-width:1180px; margin:0 auto; padding:0 28px 96px; display:flex; gap:44px; align-items:flex-start}
+  header{max-width:1180px; margin:0 auto; padding:44px 28px 28px}
+  .kicker{font-size:12px; letter-spacing:.14em; text-transform:uppercase; color:var(--ink-3); font-weight:600}
+  h1{font-size:30px; line-height:1.35; margin:10px 0 6px; letter-spacing:-.01em}
+  .sub{color:var(--ink-2); font-size:15px; margin:0 0 18px}
+  .meta{display:flex; flex-wrap:wrap; gap:8px}
+  .chip{font-size:12px; padding:3px 9px; border:1px solid var(--line-2); border-radius:99px; color:var(--ink-2); background:var(--panel)}
+  .chip.ok{border-color:#bcd6c5; background:var(--accent-soft); color:#28553d}
+  .chip.wait{border-color:#e6cda6; background:var(--warn-soft); color:#7d4a12}
+  nav{position:sticky; top:28px; width:196px; flex:0 0 196px; font-size:13px; padding-top:6px}
+  nav .t{font-size:11px; letter-spacing:.12em; color:var(--ink-3); margin-bottom:10px; font-weight:600}
+  nav a{display:block; padding:5px 0; color:var(--ink-2); text-decoration:none; border-left:2px solid transparent; padding-left:10px; margin-left:-10px}
+  nav a:hover{color:var(--accent); border-left-color:var(--accent)}
+  main{flex:1; min-width:0}
+  section{background:var(--panel); border:1px solid var(--line); border-radius:10px; padding:26px 28px; margin:0 0 18px}
+  h2{font-size:19px; margin:0 0 4px; letter-spacing:-.01em; scroll-margin-top:24px}
+  h2 .n{color:var(--ink-3); font-weight:600; margin-right:8px; font-variant-numeric:tabular-nums}
+  h3{font-size:15.5px; margin:24px 0 8px}
+  h3:first-of-type{margin-top:14px}
+  h4{font-size:14px; margin:16px 0 6px; color:var(--ink-2)}
+  p{margin:8px 0}
+  .lead{color:var(--ink-2); margin:2px 0 18px; font-size:14px}
+  ul,ol{margin:8px 0; padding-left:22px}
+  li{margin:4px 0}
+  code{font-family:var(--mono); font-size:12.5px; background:#f1f0ec; padding:1px 5px; border-radius:4px; border:1px solid var(--line)}
+  table{width:100%; border-collapse:collapse; margin:12px 0 6px; font-size:13.5px}
+  th{text-align:left; font-weight:600; color:var(--ink-2); background:#faf9f6; padding:8px 10px; border-bottom:1px solid var(--line-2); white-space:nowrap}
+  td{padding:8px 10px; border-bottom:1px solid var(--line); vertical-align:top}
+  tr:last-child td{border-bottom:none}
+  td.num,th.num{font-family:var(--mono); font-size:12px; white-space:nowrap; color:var(--ink-3)}
+  .tbl-note{font-size:12.5px; color:var(--ink-3); margin:2px 0 0}
+  .box{border:1px solid var(--line); border-radius:8px; padding:14px 16px; margin:14px 0; background:#fbfbf9}
+  .box .bt{font-size:12px; letter-spacing:.08em; color:var(--ink-3); font-weight:600; margin-bottom:6px}
+  .box.warn{background:var(--warn-soft); border-color:#ecd9bb}
+  .box.risk{background:var(--risk-soft); border-color:#ecc9c4}
+  .box.info{background:var(--info-soft); border-color:#cddce8}
+  .box.ok{background:var(--accent-soft); border-color:#c8dccf}
+  .grid2{display:grid; grid-template-columns:1fr 1fr; gap:14px; margin:14px 0}
+  .card{border:1px solid var(--line); border-radius:8px; padding:14px 15px; background:#fcfcfa}
+  .card .h{font-weight:600; font-size:14px; margin-bottom:4px}
+  .card .d{font-size:13px; color:var(--ink-2); line-height:1.65}
+  .flow{display:flex; flex-wrap:wrap; align-items:stretch; gap:8px; margin:16px 0 6px}
+  .step{flex:1 1 106px; min-width:106px; border:1px solid var(--line-2); border-radius:8px; padding:10px 12px; background:#fdfdfb}
+  .step .i{font-family:var(--mono); font-size:10.5px; color:var(--accent); letter-spacing:.06em}
+  .step .n{font-size:13.5px; font-weight:600; margin:2px 0 3px}
+  .step .d{font-size:11.5px; color:var(--ink-3); line-height:1.5}
+  .step.hi{border-color:#bcd6c5; background:var(--accent-soft)}
+  .arrow{align-self:center; color:var(--ink-3); font-size:13px; flex:0 0 auto}
+  .mod{border-top:1px solid var(--line); padding:20px 0 4px}
+  .mod:first-of-type{border-top:none; padding-top:6px}
+  .mod-title{display:flex; align-items:baseline; gap:10px; flex-wrap:wrap}
+  .mod-title .id{font-family:var(--mono); font-size:11.5px; color:var(--accent); background:var(--accent-soft); border:1px solid #c8dccf; padding:1px 7px; border-radius:4px}
+  .mod-title h3{margin:0; font-size:16px}
+  .mod p.purpose{font-size:13.5px; color:var(--ink-2); margin:6px 0 10px}
+  .io{border-left:2px solid var(--line-2); padding-left:14px; margin:10px 0 4px}
+  .io .row{display:grid; grid-template-columns:72px 1fr; gap:10px; font-size:13.5px; margin:6px 0}
+  .io .k{color:var(--ink-3); font-size:12.5px; font-weight:600; padding-top:1px}
+  .sev{font-size:11.5px; padding:1px 7px; border-radius:4px; white-space:nowrap; font-weight:600}
+  .sev.b{background:var(--risk-soft); color:var(--risk); border:1px solid #ecc9c4}
+  .sev.s{background:var(--warn-soft); color:var(--warn); border:1px solid #ecd9bb}
+  .sev.t{background:var(--info-soft); color:var(--info); border:1px solid #cddce8}
+  .bd{display:inline-block; font-size:11.5px; padding:1px 7px; border-radius:4px; font-weight:600; white-space:nowrap}
+  .bd.a{background:var(--accent-soft); color:#28553d; border:1px solid #bcd6c5}
+  .bd.b{background:var(--warn-soft); color:#7d4a12; border:1px solid #e6cda6}
+  .bd.c{background:#f0eeee; color:#6b6560; border:1px solid #ded9d3}
+  .q{border:1px solid var(--line-2); border-radius:8px; padding:12px 15px; margin:10px 0; background:#fdfdfb}
+  .q .qh{font-family:var(--mono); font-size:11.5px; color:var(--accent); font-weight:600}
+  .q .qt{font-weight:600; margin:2px 0 4px; font-size:14px}
+  .q .qd{font-size:13px; color:var(--ink-2)}
+  footer{max-width:1180px; margin:0 auto; padding:8px 28px 40px; color:var(--ink-3); font-size:12.5px}
+  @media (max-width:980px){
+    .wrap{display:block; padding:0 18px 60px}
+    nav{position:static; width:auto; margin-bottom:18px; columns:2; column-gap:20px}
+    header,footer{padding-left:18px; padding-right:18px}
+    .grid2{grid-template-columns:1fr}
+    .io .row{grid-template-columns:64px 1fr}
+  }
+  @media print{body{background:#fff} nav{display:none} section{break-inside:avoid} .wrap{display:block;padding:0}}
+</style>
+</head>
+<body>
+
+<header>
+  <div class="kicker">Product Requirements · v0.3 定稿 · 已确认</div>
+  <h1>多平台内容生产工作台</h1>
+  <p class="sub">三平台（抖音 / 小红书 / 公众号）统一的选题、资料、成稿、质检与归档工作台；仅服务 AKA张猩猩 单账号，本地运行。</p>
+  <div class="meta">
+    <span class="chip ok">状态：已确认（2026-10-28），进入开发</span>
+    <span class="chip">版本：v0.3 定稿 · 2026-10-28</span>
+    <span class="chip ok">形态：本地 Web 应用</span>
+    <span class="chip ok">账号：AKA张猩猩（单账号）</span>
+    <span class="chip ok">语速：7 字/秒</span>
+    <span class="chip ok">生成：双模式，先跑提示词工作流</span>
+  </div>
+</header>
+
+<div class="wrap">
+<nav>
+  <div class="t">目录</div>
+  <a href="#s1">1 定位与场景</a>
+  <a href="#s2">2 对象与状态</a>
+  <a href="#s3">3 核心流程</a>
+  <a href="#s4">4 模块与页面</a>
+  <a href="#s5">5 功能需求</a>
+  <a href="#s6">6 平台规范</a>
+  <a href="#s7">7 质检四闸</a>
+  <a href="#s8">8 技术实现</a>
+  <a href="#s9">9 能力边界</a>
+  <a href="#s10">10 优先级与测试</a>
+  <a href="#s11">11 风险</a>
+  <a href="#s12">12 确认事项</a>
+</nav>
+
+<main>
+
+<section id="s1">
+  <h2><span class="n">01</span>产品定位与核心使用场景</h2>
+  <p class="lead">一句话：把「同一个选题写三遍」的重复劳动，变成「一次事实梳理 + 三次有依据的重组」。</p>
+
+  <h3>定位</h3>
+  <p>单人使用、本地优先的内容生产工作台，只服务 <strong>AKA张猩猩</strong> 一个账号，覆盖抖音、小红书、公众号三个平台。它不替代你的判断，只负责三件事：把资料沉淀成可复用的底座、把平台差异固化成可执行的规范、把质检结论落到具体段落。</p>
+  <p>这不是发布工具，也不是热点雷达。所有产出终点是「可复制的文本 + 可归档的 Markdown」，发布始终由你或剪辑方手动完成。</p>
+
+  <div class="box info">
+    <div class="bt">与旧工作流的关系</div>
+    <p style="margin:0">你原有的「抖音视频账号分析」库是三账号、纯抖音的流程。本应用是<strong>重构版</strong>：只做 AKA张猩猩，扩到三平台。旧库中的口播听觉规则、低 AI 味风格手册、CTA 模板、违禁词库可作为<strong>参考与规则来源</strong>，但不在本应用中整套继承，也不写回旧库目录。</p>
+  </div>
+
+  <h3>核心场景</h3>
+  <div class="grid2">
+    <div class="card"><div class="h">A · 开工</div><div class="d">新选题进池，写清来源、目标平台、优先级。资料没就绪就不进创作。</div></div>
+    <div class="card"><div class="h">B · 备料</div><div class="d">链接、文件、原话堆进资料区，逐条标为事实 / 观点 / 推断 / 待核实，形成事实底座。</div></div>
+    <div class="card"><div class="h">C · 出稿</div><div class="d">同一底座，三平台各自按结构要求出稿；抖音先出大纲给你确认方向，再出分镜脚本。</div></div>
+    <div class="card"><div class="h">D · 复查归档</div><div class="d">四道闸质检给出可定位的问题，改完留版本；定稿写进 Obsidian，排期上标出发布日期。</div></div>
+  </div>
+
+  <h3>明确不承担的事</h3>
+  <ul>
+    <li>不声称任何选题「当前很热」——除非有明确数据来源并标注检索时间。</li>
+    <li>不自动发布到任何平台——没有账号授权就不存在这条链路。</li>
+    <li>不承诺内容合规——只按你确认的词表与规则做提示，不替代平台审核。</li>
+    <li>不编造真实使用体验、截图、翻车细节和数据。</li>
+  </ul>
+</section>
+
+<section id="s2">
+  <h2><span class="n">02</span>产品模型：对象与状态</h2>
+  <p class="lead">全文档的公共语言。字段、状态、规则都以这里为唯一口径。</p>
+
+  <table>
+    <thead><tr><th style="width:100px">对象</th><th style="width:170px">关键字段</th><th>说明</th></tr></thead>
+    <tbody>
+      <tr><td><strong>选题 Topic</strong></td><td>名称、来源、立意、内容类型、目标平台、优先级、状态、排期日、标签、账号</td><td>账号固定为 AKA张猩猩，字段保留以便将来扩展。目标平台可只选其中一两个。内容类型是选题属性，不是平台属性。</td></tr>
+      <tr><td><strong>资料条目 Material</strong></td><td>类型、原始内容、来源、分类、核实状态、备注</td><td>选题私有。四类：事实 / 观点 / 推断 / 待核实。</td></tr>
+      <tr><td><strong>素材片段 Snippet</strong></td><td>文本、分类、来源、标签</td><td>跨选题复用，多对多；引用时快照进选题，避免后续改动影响已定稿内容。</td></tr>
+      <tr><td><strong>大纲 Outline</strong></td><td>钩子、核心论点、结构、待验证假设、发布文案、封面文案</td><td>抖音专属前置产物；需你确认方向后才允许生成分镜脚本。</td></tr>
+      <tr><td><strong>稿件 Draft</strong></td><td>选题、平台、来源、状态、当前版本、时长、投流标记、商单标记</td><td>一题一平台一份稿件，多份历史版本。平台只决定形态（分镜脚本 / 图文笔记 / 长文），内容类型继承自选题，不单独设置。投流与商单标记默认收起，勾选后才展开对应 CTA 判定。</td></tr>
+      <tr><td><strong>版本 Revision</strong></td><td>版本号、正文、来源、Prompt 快照、时间、质检摘要</td><td>每次保存新增一条，只增不改。</td></tr>
+      <tr><td><strong>质检报告 QCReport</strong></td><td>所属版本、闸门结果、命中项、采纳状态、AI 参考记录</td><td>绑定具体版本；改稿需重跑。</td></tr>
+      <tr><td><strong>排期项 Schedule</strong></td><td>选题、平台、计划发布日、状态</td><td>一题多平台可多条。</td></tr>
+      <tr><td><strong>规则 Rule</strong></td><td>ID、平台、检查项、阈值、严重级别、启用状态</td><td>内置默认值，可逐条改阈值与开关，改动留记录。</td></tr>
+      <tr><td><strong>Prompt 模板</strong></td><td>平台、正文、变量说明、版本</td><td>可编辑、可回滚；生成记录保存当时快照。</td></tr>
+      <tr><td><strong>候选选题 Candidate</strong></td><td>标题、来源、来源链接、检索日期、推荐理由、状态</td><td>来自选题雷达或定期补充，采纳后转为正式选题。</td></tr>
+    </tbody>
+  </table>
+
+  <h3>内容类型（选题级）</h3>
+  <p>内容类型挂在选题上，一个选题一个类型，三个平台共用。同一选题在抖音、小红书、公众号各出一份内容时，三份的类型完全相同——平台只改形态与结构要求，类型决定内容要求。</p>
+  <table>
+    <thead><tr><th style="width:90px">类型</th><th style="width:220px">一句话特征</th><th>主要约束（第 07 节 T 系列）</th></tr></thead>
+    <tbody>
+      <tr><td><strong>教程</strong></td><td>把一件事拆成别人能照做的步骤；复盘是它的过去时形态</td><td>步骤可执行、前置条件、坑位与代价、结果可验证</td></tr>
+      <tr><td><strong>测评</strong></td><td>在同一组维度上比较两个以上对象</td><td>维度一致、参数与价格溯源、结论取舍</td></tr>
+      <tr><td><strong>观点</strong></td><td>提出一个主论点并回应反方；行业观察是它的外部视角</td><td>单一主论点、论点支撑、预设反驳、来源与时间、事实与推测分离、预测边界</td></tr>
+    </tbody>
+  </table>
+  <p class="tbl-note">只有三类。复盘不单列——它是教程的过去时，按教程建选题，规则额外要求过程与结果可核对；行业观察也不单列——它是观点的外部视角，按观点建选题，规则额外要求来源与时间、推测标注。一个选题确实跨两类时，只选主类型，另一类作为正文里的章节存在，不新增第二个类型字段。</p>
+
+  <h3>选题状态机</h3>
+  <table>
+    <thead><tr><th style="width:120px">状态</th><th style="width:230px">进入条件</th><th>可去往</th></tr></thead>
+    <tbody>
+      <tr><td>待整理</td><td>仅录入名称与来源</td><td>资料就绪、已搁置</td></tr>
+      <tr><td>资料就绪</td><td>至少 1 条资料，且无未分类条目</td><td>创作中、待整理、已搁置</td></tr>
+      <tr><td>创作中</td><td>任一目标平台稿件存在</td><td>待质检、已搁置</td></tr>
+      <tr><td>待质检</td><td>至少一份稿件标记「已完成，待检查」</td><td>创作中、已归档</td></tr>
+      <tr><td>已归档</td><td>所有目标平台稿件为「可归档」或「已放弃」，且已写入 Obsidian</td><td>创作中（回炉）</td></tr>
+      <tr><td>已搁置</td><td>手动</td><td>待整理、资料就绪、创作中</td></tr>
+    </tbody>
+  </table>
+  <p class="tbl-note">状态由系统按条件推导，不允许手动跳级；「已搁置」是唯一可手动回退的例外。</p>
+
+  <h3>稿件状态机（按平台独立）</h3>
+  <table>
+    <thead><tr><th style="width:110px">状态</th><th style="width:250px">进入条件</th><th>说明</th></tr></thead>
+    <tbody>
+      <tr><td>未开始</td><td>选题已建，未出稿</td><td>显示「生成」入口</td></tr>
+      <tr><td>待大纲</td><td>抖音：仅有资料，未出大纲</td><td>抖音专属前置状态</td></tr>
+      <tr><td>待确认方向</td><td>大纲已生成，等你确认</td><td>未确认不允许出分镜</td></tr>
+      <tr><td>草稿</td><td>生成结果落库或人工回填</td><td>来源标「生成 / 人工回填」</td></tr>
+      <tr><td>待修改</td><td>质检存在阻断级问题</td><td>可继续编辑</td></tr>
+      <tr><td>可归档</td><td>无阻断问题且无未采纳建议，或已全部忽略</td><td>允许写入 Obsidian</td></tr>
+      <tr><td>已归档</td><td>写入成功</td><td>再编辑回「草稿」并要求重跑质检</td></tr>
+      <tr><td>已放弃</td><td>手动</td><td>保留记录，不计入完成度</td></tr>
+    </tbody>
+  </table>
+</section>
+
+<section id="s3">
+  <h2><span class="n">03</span>核心使用流程</h2>
+  <p class="lead">十步主链路。第 5 步「大纲确认」是抖音的必经卡口，没有它就会写出方向错误的长稿。</p>
+
+  <div class="flow">
+    <div class="step"><div class="i">01</div><div class="n">新建选题</div><div class="d">名称 + 来源 + 平台</div></div>
+    <div class="arrow">→</div>
+    <div class="step"><div class="i">02</div><div class="n">录入资料</div><div class="d">粘贴/链接/文件/抓取</div></div>
+    <div class="arrow">→</div>
+    <div class="step"><div class="i">03</div><div class="n">分类核实</div><div class="d">事实/观点/推断/待核实</div></div>
+    <div class="arrow">→</div>
+    <div class="step hi"><div class="i">04</div><div class="n">出大纲</div><div class="d">抖音：钩子/论点/结构</div></div>
+    <div class="arrow">→</div>
+    <div class="step hi"><div class="i">05</div><div class="n">确认方向</div><div class="d">你点头才继续</div></div>
+    <div class="arrow">→</div>
+    <div class="step"><div class="i">06</div><div class="n">出稿</div><div class="d">分镜脚本/图文/长文</div></div>
+    <div class="arrow">→</div>
+    <div class="step"><div class="i">07</div><div class="n">结构校验</div><div class="d">解析场次与段落</div></div>
+    <div class="arrow">→</div>
+    <div class="step"><div class="i">08</div><div class="n">四闸质检</div><div class="d">听觉→AI味→CTA→违禁词</div></div>
+    <div class="arrow">→</div>
+    <div class="step"><div class="i">09</div><div class="n">改稿留版</div><div class="d">对比、回滚</div></div>
+    <div class="arrow">→</div>
+    <div class="step"><div class="i">10</div><div class="n">归档排期</div><div class="d">写 Obsidian + 上排期</div></div>
+  </div>
+
+  <h3>断点与恢复路径</h3>
+  <table>
+    <thead><tr><th style="width:170px">断点</th><th style="width:240px">系统行为</th><th>你的恢复动作</th></tr></thead>
+    <tbody>
+      <tr><td>链接抓取失败</td><td>保留 URL，标记失败原因（超时 / 非 2xx / 正文为空 / 需登录），不写入任何正文</td><td>手动粘贴，或改为「仅记录链接」</td></tr>
+      <tr><td>文件解析失败</td><td>保留文件名与原因，提示扫描件需先转文本</td><td>转存 TXT/MD 后重新导入</td></tr>
+      <tr><td>大纲方向被否</td><td>保留原大纲为 v1，记录否决原因</td><td>改角度重出大纲，或直接手写</td></tr>
+      <tr><td>回填内容结构不符</td><td>列出缺失场次/章节，允许存草稿，不允许进质检</td><td>补齐结构或重新生成</td></tr>
+      <tr><td>质检阻断</td><td>定位到段落或场次，给建议</td><td>逐条修改，或标记忽略（需填理由）</td></tr>
+      <tr><td>Obsidian 写入失败</td><td>保留归档任务，显示具体原因</td><td>修正路径后重试，或导出到本地</td></tr>
+      <tr><td>目标文件被外部改动</td><td>写入前比对指纹，不一致则中止并展示差异</td><td>覆盖 / 另存新版本 / 放弃</td></tr>
+    </tbody>
+  </table>
+</section>
+
+<section id="s4">
+  <h2><span class="n">04</span>功能模块与页面结构</h2>
+  <p class="lead">七个页面，每页只承担一类工作。</p>
+
+  <table>
+    <thead><tr><th style="width:150px">页面</th><th style="width:190px">核心问题</th><th>关键区域</th></tr></thead>
+    <tbody>
+      <tr><td>今日工作台</td><td>今天该干什么？</td><td>本周排期、卡在质检的稿件、待确认的大纲、资料未就绪的选题、素材缺口</td></tr>
+      <tr><td>选题池</td><td>有哪些题，到哪一步了？</td><td>正式选题 + 候选选题两个视图；状态/平台/优先级筛选与搜索</td></tr>
+      <tr><td>选题详情</td><td>这个题的资料和稿子在哪？</td><td>状态条、资料区、三平台稿件卡、质检入口、素材缺口</td></tr>
+      <tr><td>创作台</td><td>怎么出这一份稿？</td><td>左资料速览、中 Prompt 组装与回填、右结构校验与真实性标注</td></tr>
+      <tr><td>质检台</td><td>具体哪里有问题？</td><td>四闸结果、问题定位、改前改后、采纳与忽略</td></tr>
+      <tr><td>排期看板</td><td>哪天发什么？</td><td>周视图按平台分色；拖拽只改日期</td></tr>
+      <tr><td>规范与模板</td><td>规则和 Prompt 怎么改？</td><td>规则开关与阈值、Prompt 版本、词表、参考资产同步</td></tr>
+    </tbody>
+  </table>
+
+  <h3>全局状态条</h3>
+  <p>左侧固定导航，顶部常驻状态条显示四项：数据目录、Obsidian 归档目录是否可写、违禁词库词数与更新时间、今日待办数。异常直接标红并可点开，不藏在设置里。</p>
+
+  <div class="box info">
+    <div class="bt">设计约束</div>
+    <p style="margin:0">所有列表页一屏可见「状态 + 平台 + 最近更新」；所有操作必须有反馈，成功给撤销入口，失败给具体原因与下一步；不做无数据支撑的图表。</p>
+  </div>
+</section>
+
+<section id="s5">
+  <h2><span class="n">05</span>功能需求</h2>
+  <p class="lead">按「目的 / 输入 / 处理 / 输出 / 异常」描述，作为开发与验收的共同依据。</p>
+
+  <div class="mod">
+    <div class="mod-title"><span class="id">FR-01</span><h3>选题管理</h3></div>
+    <p class="purpose">选题池是唯一入口，避免选题散落在聊天记录与备忘录里。</p>
+    <div class="io">
+      <div class="row"><div class="k">输入</div><div>名称（必填，≤60 字）、来源（自由文本）、立意（≤120 字）、目标平台（可多选，默认全选）、优先级、计划发布日（可选）、标签。</div></div>
+      <div class="row"><div class="k">处理</div><div>创建后为「待整理」；目标平台决定详情页稿件卡数量；排序规则为「有排期日按日期 → 无日期按优先级 → 同优先级按创建时间」。</div></div>
+      <div class="row"><div class="k">输出</div><div>卡片列表、自动状态推导、按名称/标签/来源筛选搜索。</div></div>
+      <div class="row"><div class="k">异常</div><div>同名选题允许存在但创建时提示；删除需二次确认，已归档选题删除只移除索引，Obsidian 文件保留。</div></div>
+    </div>
+    <div class="box warn"><div class="bt">关于热度</div><p style="margin:0">系统不做热度打分、不给「推荐选题」。候选选题必须带来源链接与检索日期，无来源的不入库。</p></div>
+  </div>
+
+  <div class="mod">
+    <div class="mod-title"><span class="id">FR-02</span><h3>资料整理</h3></div>
+    <p class="purpose">把「我查到的」和「我以为的」分开存放，这是三平台内容不出错的唯一保障。</p>
+    <div class="io">
+      <div class="row"><div class="k">输入</div><div>粘贴文本；链接登记（URL + 标题 + 摘要）；自动抓取链接正文；导入本地文件（TXT / MD / PDF / DOCX）；图片只登记不解析。</div></div>
+      <div class="row"><div class="k">处理</div><div>每条资料必须落入四类之一：事实（可引用、有出处）/ 观点（他人或自己的看法）/ 推断（基于资料的推理）/ 待核实（有疑点）。抓取与解析结果先预览再落库。未分类条目视为资料未完成。</div></div>
+      <div class="row"><div class="k">输出</div><div>按分类分组的资料列表、完整度提示（如「3 条事实 / 1 条待核实」）、可复制的资料摘要块。</div></div>
+      <div class="row"><div class="k">异常</div><div>抓取失败区分四类原因并保留 URL；文件 >20MB 或 >100 页提示分段导入；扫描件提示需 OCR。</div></div>
+    </div>
+  </div>
+
+  <div class="mod">
+    <div class="mod-title"><span class="id">FR-03</span><h3>跨选题素材复用</h3></div>
+    <p class="purpose">一个数据、一个案例往往服务多个选题。</p>
+    <div class="io">
+      <div class="row"><div class="k">输入</div><div>资料条目「存入素材库」，或直接新建片段（文本 + 分类 + 来源 + 标签）。</div></div>
+      <div class="row"><div class="k">处理</div><div>引用时复制快照进选题资料区并保留来源链接；修改源素材不影响已引用内容，只提示「已更新，是否同步」。</div></div>
+      <div class="row"><div class="k">输出</div><div>素材库列表（标签筛选、引用次数）、引用关系可追溯。</div></div>
+      <div class="row"><div class="k">异常</div><div>仍被引用的素材删除时只标记「已停用」。</div></div>
+    </div>
+  </div>
+
+  <div class="mod">
+    <div class="mod-title"><span class="id">FR-04</span><h3>两段式创作：大纲 → 确认 → 成稿</h3></div>
+    <p class="purpose">抖音必须先把方向定下来再写长稿；小红书与公众号可直接成稿，也可选用大纲。</p>
+    <div class="io">
+      <div class="row"><div class="k">输入</div><div>选题信息、已分类资料、目标受众、内容类型（选题级，三平台共用：教程 / 测评 / 观点）、时长（抖音固定 3–5 分钟）、平台规范、Prompt 模板、投流标记、商单标记。</div></div>
+      <div class="row"><div class="k">处理</div><div>抖音：先生成大纲（钩子 / 核心论点 / 结构 / 待验证假设 / 发布文案 / 封面文案），状态转「待确认方向」；你确认或改写后才允许生成分镜脚本。三平台都执行结构校验；校验不通过可存草稿、不可归档。</div></div>
+      <div class="row"><div class="k">输出</div><div>结构化正文、该次 Prompt 快照、来源标记（生成 / 人工回填）、结构校验结果。</div></div>
+      <div class="row"><div class="k">异常</div><div>资料为空禁止生成；模板变量缺失时高亮；生成中断保留输入不丢草稿；大纲被否时保留为 v1 并记原因。</div></div>
+    </div>
+
+    <h4>成稿结构约定（结构校验的依据）</h4>
+    <ul>
+      <li><strong>抖音 · 分镜脚本</strong>：头部元数据（账号 / 时长 / 产品 / 封面文案 / 发布文案 / 投流 / 商单）+ 场次表（场次、景别、时长、画面描述、字幕or配音、花字、素材来源/状态、反馈）+ 纯口播稿（只留文字，段间空行，不含镜头号与时间戳）。</li>
+      <li><strong>小红书</strong>：标题 / 正文 / 配图建议（编号，每张一句）/ 话题标签。</li>
+      <li><strong>公众号</strong>：标题 / 开篇 / 章节小标题（可多个）/ 结尾。</li>
+    </ul>
+    <p class="tbl-note">解析失败时明确显示「未识别到 XX 结构」，并标出已识别部分，便于手工补齐；不做「大概齐」的猜测。</p>
+
+    <h4>真实性标注（硬规则）</h4>
+    <p>稿件中凡出现「真实体验 / 截图 / 翻车 / 具体数据」，必须能追溯到资料区里的对应条目。不能追溯时，在对应句子后插入标记 <code>⚠️ 真实性待补</code>，并在质检中以阻断级报告。国外 AI 工具默认使用代称（某海外 AI 工具），除非你确认已取得推广授权。</p>
+  </div>
+
+  <div class="mod">
+    <div class="mod-title"><span class="id">FR-05</span><h3>三平台差异化组织</h3></div>
+    <p class="purpose">三份稿子共享同一事实底座，但各自重组，不做互转。</p>
+    <table>
+      <thead><tr><th style="width:80px">平台</th><th style="width:210px">必须重组的地方</th><th>禁止</th></tr></thead>
+      <tbody>
+        <tr><td>抖音</td><td>前 3 秒钩子；按 7 字/秒折算字数；单句 ≤40 字；每段对应镜头；结尾复述核心信息</td><td>把公众号段落直接朗读化；书面连接词堆叠；一次成功无波折</td></tr>
+        <tr><td>小红书</td><td>标题给利益点；前三行给结论；正文分 3–5 点；配图逐张说明</td><td>长段落；无分点整块论述；外链导流</td></tr>
+        <tr><td>公众号</td><td>开篇 200 字内建立问题；每章小标题；章节间承接；结尾收束</td><td>只做要点罗列；章节无递进</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <div class="mod">
+    <div class="mod-title"><span class="id">FR-06</span><h3>质检</h3></div>
+    <p class="purpose">把「感觉不太行」变成「第 3 场第 2 句是书面语，建议改成……」。</p>
+    <div class="io">
+      <div class="row"><div class="k">输入</div><div>某一版正文 + 平台 + 投流/商单标记 + 词表 + 资料分类结果。</div></div>
+      <div class="row"><div class="k">处理</div><div>按四道闸顺序执行（详见第 07 节），结构先行，避免先改文字再返工。每条命中产出规则 ID、级别、定位（场次/章节 + 段落 + 原句）、依据、建议。可逐条采纳或忽略（忽略需理由）。</div></div>
+      <div class="row"><div class="k">输出</div><div>绑定版本的报告、按级别统计、改前改后对比、可复制的问题清单。</div></div>
+      <div class="row"><div class="k">异常</div><div>正文为空或结构未通过时不执行后三闸；阈值改动后旧报告标「规则已变更」。</div></div>
+    </div>
+    <div class="box risk"><div class="bt">边界声明</div><p style="margin:0">质检只能发现本方案列出的可判定问题。<strong>不能识别所有违规内容，不能保证平台审核通过</strong>，也不做法律判断。违禁词命中只代表「必审」，不等于「违规」。</p></div>
+  </div>
+
+  <div class="mod">
+    <div class="mod-title"><span class="id">FR-07</span><h3>版本与对比</h3></div>
+    <p class="purpose">改稿是常态，必须能回到任意一版并看清改了什么。</p>
+    <div class="io">
+      <div class="row"><div class="k">处理</div><div>每次保存 / 生成 / 回滚都新增版本，记录来源、时间、Prompt 快照、质检摘要。对比用段落级 + 句级差异。</div></div>
+      <div class="row"><div class="k">输出</div><div>版本列表、两版并排对比、回滚（回滚本身也产生新版本）。</div></div>
+      <div class="row"><div class="k">异常</div><div>内容无变化时不产生空版本。</div></div>
+    </div>
+  </div>
+
+  <div class="mod">
+    <div class="mod-title"><span class="id">FR-08</span><h3>排期看板</h3></div>
+    <p class="purpose">知道哪天要发什么，而不是临到头才想起来。</p>
+    <div class="io">
+      <div class="row"><div class="k">处理</div><div>按周展示，一题多平台各占一条；颜色区分平台，角标显示稿件状态；拖拽只改日期不改状态；未定日期进「待排期」区。</div></div>
+      <div class="row"><div class="k">输出</div><div>周视图、待排期清单、临期提醒（计划日已过且未归档标红）。</div></div>
+      <div class="row"><div class="k">异常</div><div>同平台同日 >2 条时提示冲突但不阻止。</div></div>
+    </div>
+  </div>
+
+  <div class="mod">
+    <div class="mod-title"><span class="id">FR-09</span><h3>归档与 Obsidian 写入</h3></div>
+    <p class="purpose">定稿即入库，不需要二次搬运。</p>
+    <div class="io">
+      <div class="row"><div class="k">输入</div><div>可归档的版本、选题信息、质检结论。</div></div>
+      <div class="row"><div class="k">处理</div><div>应用为唯一真相源。写入 Obsidian 主库下 <code>内容工作台/</code>，生成带 frontmatter 的 Markdown（选题 ID、平台、账号、状态、版本、时长、投流、商单、质检结论、更新时间、标签），正文顶部附选题索引链接；同步更新索引文件。</div></div>
+      <div class="row"><div class="k">输出</div><div>Obsidian 文件 + 归档记录（路径、时间、文件指纹）。</div></div>
+      <div class="row"><div class="k">异常</div><div>目录不存在时询问是否创建；无写权限时给出路径与系统设置指引；指纹不一致时中止并让你选择。</div></div>
+    </div>
+    <div class="box info"><div class="bt">目录结构（新库，不写回旧「抖音视频账号分析」）</div>
+      <pre style="font-family:var(--mono); font-size:12px; margin:6px 0 0; white-space:pre-wrap">/Users/liz/Documents/Obsidian Vault/内容工作台/
+├── 00-索引/选题索引.md
+├── 01-选题/2026-10-28 选题名.md
+├── 02-稿件/<选题名>/抖音-分镜-v3.md
+├── 02-稿件/<选题名>/小红书-图文-v2.md
+├── 02-稿件/<选题名>/公众号-长文-v1.md
+├── 03-排期/2026-W44.md
+└── 04-规范/平台规范-当前版本.md</pre>
+    </div>
+  </div>
+
+  <div class="mod">
+    <div class="mod-title"><span class="id">FR-10</span><h3>规范与模板管理</h3></div>
+    <p class="purpose">规范会变，必须能在界面里改，而不是改代码。</p>
+    <div class="io">
+      <div class="row"><div class="k">输入</div><div>规则阈值与开关、Prompt 模板正文、违禁词表、语速与时长默认值。</div></div>
+      <div class="row"><div class="k">处理</div><div>修改即时生效于新执行的质检；变更留记录；模板支持回滚到历史版本。</div></div>
+      <div class="row"><div class="k">输出</div><div>规则清单、模板版本、变更记录。</div></div>
+      <div class="row"><div class="k">异常</div><div>关闭全部规则需确认；模板缺必要变量不允许保存。</div></div>
+    </div>
+  </div>
+
+  <div class="mod">
+    <div class="mod-title"><span class="id">FR-11</span><h3>选题供给：雷达 + 定期补充</h3></div>
+    <p class="purpose">你不想每次从零想选题，但也不接受凭空编造的「热门」。</p>
+    <div class="io">
+      <div class="row"><div class="k">输入</div><div>① 雷达产出：读取 <code>02_内容规划/选题池/*.md</code> 与新周排期看板里的待写项（只读导入，不写回旧库）；② 我定期补充的一批候选；③ 你发给我的链接或主题。</div></div>
+      <div class="row"><div class="k">处理</div><div>候选进入「候选池」，必须带来源链接与检索日期；你可「采纳」转为正式选题（可顺手改标题与角度），或「丢弃」。雷达导入项按来源文件保留原始编号，便于回溯。我补充的候选由我批量写入候选池，不直接进正式选题。</div></div>
+      <div class="row"><div class="k">输出</div><div>候选池列表（来源、日期、理由）、采纳记录、导入结果（新增 / 重复 / 跳过）。</div></div>
+      <div class="row"><div class="k">异常</div><div>雷达文件不存在或格式变化时提示「未导入」并给路径，不做静默跳过；重复标题按相似度提示而非直接去重。</div></div>
+    </div>
+    <div class="box warn"><div class="bt">诚实边界</div><p style="margin:0">我定期补充的候选来自公开信息的联网检索，会标注检索日期与来源链接，<strong>不代表实时热度</strong>，也不保证覆盖小红书站内热点（受反爬与登录态限制，常常拿不到）。拿不到的会明确标「需你投喂」。</p></div>
+  </div>
+
+  <div class="mod">
+    <div class="mod-title"><span class="id">FR-12</span><h3>设置与数据管理</h3></div>
+    <p class="purpose">让路径、词库、备份有明确位置。</p>
+    <div class="io">
+      <div class="row"><div class="k">输入</div><div>数据目录、Obsidian 库路径与子目录名、语速与默认时长、API 配置（本期不启用）、导出范围。</div></div>
+      <div class="row"><div class="k">处理</div><div>保存前校验路径可写；词库导入时显示词数；每日启动自动滚动备份（保留 7 份）。</div></div>
+      <div class="row"><div class="k">输出</div><div>设置状态、路径检测结果、全量导出（JSON + Markdown 目录）。</div></div>
+      <div class="row"><div class="k">异常</div><div>路径失效在状态条常驻提示，不静默失败。</div></div>
+    </div>
+  </div>
+</section>
+
+<section id="s6">
+  <h2><span class="n">06</span>平台规范（默认值，待你审改）</h2>
+  <p class="lead">全部可在「规范与模板」中修改，改完即时生效。抖音的数值按你确认的 7 字/秒折算。</p>
+
+  <h3>抖音 · 分镜脚本（3–5 分钟）</h3>
+  <table>
+    <thead><tr><th style="width:140px">维度</th><th style="width:250px">默认标准</th><th>说明</th></tr></thead>
+    <tbody>
+      <tr><td>语速基线</td><td>7 字/秒</td><td>AKA张猩猩实测值</td></tr>
+      <tr><td>时长与字数</td><td>3 分钟 = 1260 字，4 分钟 = 1680，5 分钟 = 2100；±10% 容差 → <strong>1134–2310</strong></td><td>只核纯口播字数，不核含录屏的总时长</td></tr>
+      <tr><td>前 3 秒钩子</td><td>必须命中至少两项：具体场景 / 反差冲突 / 强主张</td><td>禁止「大家好 / 今天给大家分享」式开头</td></tr>
+      <tr><td>单句长度</td><td>≤40 字；含 ≥4 个「的」且 ≥38 字的句子必须拆</td><td>一口气念不完就拆</td></tr>
+      <tr><td>段落与场次</td><td>每段对应一个场次；段间空行；每场标景别与素材来源</td><td>分镜是拍摄交付物</td></tr>
+      <tr><td>结尾复述</td><td>核心结论在结尾用不同话术复述一次</td><td>听觉不可回看，只出现一次视为丢失</td></tr>
+      <tr><td>书面连接词</td><td>禁：此外 / 综上所述 / 值得注意的是 / 换言之 / 与此同时 / 因此 / 从而 / 首先…其次…最后</td><td>模板化连接词一律禁</td></tr>
+      <tr><td>硬禁用词</td><td>赋能 / 重塑 / 提升效率 / 工作流 / 闭环</td><td>引号内作反面示例可豁免，需人工判定</td></tr>
+      <tr><td>CTA（自然流量）</td><td>文末须同时含评论召唤 + 关注/下期钩子</td><td>缺任一项即阻断</td></tr>
+      <tr><td>CTA（投流）</td><td>禁止一切互动引导词；改用价值型软钩子</td><td>关注/点赞/评论/转发/私信/双击/收藏 均违规</td></tr>
+      <tr><td>工具点名</td><td>国外工具用代称；国内工具可点名但投流需软著/授权</td><td>见通用规范分层口径</td></tr>
+    </tbody>
+  </table>
+
+  <h3>小红书 · 图文笔记（形态基线）</h3>
+  <p class="tbl-note" style="margin-bottom:10px">内容类型由选题决定，三平台共用同一类型。本节只定义<strong>形态</strong>要求；类型带来的内容要求（步骤可执行、参数溯源、对比维度、来源与推测分离等）见第 07 节 T 系列。</p>
+  <table>
+    <thead><tr><th style="width:140px">维度</th><th style="width:300px">默认标准</th><th style="width:64px">级别</th></tr></thead>
+    <tbody>
+      <tr><td>标题</td><td>12–20 字，含具体利益点、身份标签或数字</td><td><span class="sev s">建议</span></td></tr>
+      <tr><td>正文长度</td><td>300–800 字（教程型步骤超 8 步建议拆篇）</td><td><span class="sev t">提示</span></td></tr>
+      <tr><td>首屏结论</td><td>前三行给结论或结论式钩子；背景铺垫开头 → 阻断</td><td><span class="sev b">阻断</span></td></tr>
+      <tr><td>分点数量</td><td>教程 / 测评 3–5 点；观点 2–4 点；短笔记可 1–3 点或不分点</td><td><span class="sev s">建议</span></td></tr>
+      <tr><td>段落行数</td><td>单段 ≤3 行，段间空行</td><td><span class="sev s">建议</span></td></tr>
+      <tr><td>配图</td><td>3–9 张，每张有且仅有一句说明</td><td><span class="sev s">建议</span></td></tr>
+      <tr><td>首图</td><td>沿用你的固定风格；应用只提供封面文案字段与字数提示，不预设字体与配色</td><td><span class="sev t">提示</span></td></tr>
+      <tr><td>话题标签</td><td>3–6 个，至少 2 个在正文出现相关词</td><td><span class="sev t">提示</span></td></tr>
+      <tr><td>禁止</td><td>外链、微信号、二维码、加V、私信领</td><td><span class="sev b">阻断</span></td></tr>
+    </tbody>
+  </table>
+
+  <h3>公众号 · 长文章（形态基线）</h3>
+  <p class="tbl-note" style="margin-bottom:10px">类型同样由选题决定，三平台同一类型；本节只定义长文的形态要求。</p>
+  <table>
+    <thead><tr><th style="width:140px">维度</th><th style="width:300px">默认标准</th><th style="width:64px">级别</th></tr></thead>
+    <tbody>
+      <tr><td>标题</td><td>≤24 字，可带副标题</td><td><span class="sev s">建议</span></td></tr>
+      <tr><td>正文长度</td><td>1500–3000 字</td><td><span class="sev t">提示</span></td></tr>
+      <tr><td>章节</td><td>3–5 章，每章有小标题</td><td><span class="sev s">建议</span></td></tr>
+      <tr><td>小标题</td><td>「一、二、三」「第一部分」式空标题 → 建议改写为具体判断</td><td><span class="sev s">建议</span></td></tr>
+      <tr><td>开篇</td><td>200 字内提出核心问题或冲突</td><td><span class="sev b">阻断</span></td></tr>
+      <tr><td>段落</td><td>单段 ≤5 行</td><td><span class="sev t">提示</span></td></tr>
+      <tr><td>结尾</td><td>回扣开篇问题，给结论或延伸</td><td><span class="sev s">建议</span></td></tr>
+      <tr><td>硬广收尾</td><td>「赶快关注 / 点击购买 / 扫码领取」类 → 阻断</td><td><span class="sev b">阻断</span></td></tr>
+    </tbody>
+  </table>
+</section>
+
+<section id="s7">
+  <h2><span class="n">07</span>质检四闸</h2>
+  <p class="lead">顺序固定：先结构、再文字、再 CTA、最后违禁词。先文字再发现结构不达标，返工会翻倍。</p>
+
+  <p>三个平台共用同一套闸门编号。平台决定形态判定（H / R / G 系列），<strong>选题的内容类型决定内容判定（T 系列）</strong>，X 系列与闸②④始终生效。</p>
+  <table>
+    <thead><tr><th style="width:56px">闸</th><th style="width:140px">名称</th><th style="width:270px">检查内容（按平台切换）</th><th>判定</th></tr></thead>
+    <tbody>
+      <tr><td class="num">①</td><td>结构</td><td>抖音：钩子 / 字数时长 / 单句 ≤40 / 结尾复述 / 场次对应<br>小红书：标题与首屏结论 / 分点密度 / 段落行数 / 配图与标签<br>公众号：开篇承诺 / 章节推进 / 证据密度 / 结尾回扣</td><td>平台类型的关键项不达标即阻断，先修结构</td></tr>
+      <tr><td class="num">②</td><td>去 AI 味</td><td>硬禁用词、慎用词密度、模板化连接词、「通过…从而…最终实现」句式、超长句</td><td>叙述者自身用语命中即阻断；引号内反面示例豁免（人工判定）</td></tr>
+      <tr><td class="num">③</td><td>转化与收尾</td><td>抖音：评论召唤 + 关注钩子<br>小红书：收藏理由 / 评论引导 / 标签收口<br>公众号：结尾回扣 + 可延伸处，禁硬广</td><td>默认按自然流量口径判定；勾选投流 / 商单后才切到对应分支</td></tr>
+      <tr><td class="num">④</td><td>违禁词与红线</td><td>本地词库子串匹配 + 极限词 / 导流 / 类目红线 + 平台特有红线</td><td>命中为「必审」，语境判定后决定是否阻断</td></tr>
+    </tbody>
+  </table>
+
+  <h3>规则明细</h3>
+  <table>
+    <thead><tr><th style="width:64px">ID</th><th style="width:70px">平台</th><th style="width:180px">检查项</th><th>判定逻辑</th><th style="width:58px">级别</th></tr></thead>
+    <tbody>
+      <tr><td class="num">H1</td><td>抖音</td><td>前 3 秒钩子</td><td>首句命中「具体场景 / 反差冲突 / 强主张」至少两项；命中「大家好/今天分享」直接阻断</td><td><span class="sev b">阻断</span></td></tr>
+      <tr><td class="num">H2</td><td>抖音</td><td>字数与时长</td><td>纯口播字数 ÷ 7 = 秒数，须落在 180–300 秒；折算字数 <strong>1134–2310</strong>（±10% 容差）</td><td><span class="sev b">阻断</span></td></tr>
+      <tr><td class="num">H3</td><td>抖音</td><td>单句长度</td><td>&gt;40 字，或含 ≥4 个「的」且 ≥38 字</td><td><span class="sev b">阻断</span></td></tr>
+      <tr><td class="num">H4</td><td>抖音</td><td>结尾复述</td><td>结尾段与核心论点的关键词重合度 ≥0.4 且句式不同</td><td><span class="sev b">阻断</span></td></tr>
+      <tr><td class="num">H5</td><td>抖音</td><td>场次覆盖</td><td>每段口播有对应场次；场次表字段不空</td><td><span class="sev s">建议</span></td></tr>
+      <tr><td class="num">S1</td><td>全部</td><td>硬禁用词</td><td>赋能/重塑/提升效率/工作流/闭环；引号内命中标记为「需人工判定」</td><td><span class="sev b">阻断</span></td></tr>
+      <tr><td class="num">S2</td><td>全部</td><td>模板化连接词</td><td>此外/综上所述/值得注意的是/换言之/与此同时/因此/从而/首先其次最后，密度超阈值报错</td><td><span class="sev s">建议</span></td></tr>
+      <tr><td class="num">S3</td><td>全部</td><td>AI 句式</td><td>「通过…从而…最终实现…」结构匹配</td><td><span class="sev s">建议</span></td></tr>
+      <tr><td class="num">C1</td><td>抖音</td><td>评论召唤</td><td>结尾含「评论区 / 你觉得呢 / 聊聊 / 点名 / 扣【XX】」等</td><td><span class="sev b">阻断</span></td></tr>
+      <tr><td class="num">C2</td><td>抖音</td><td>关注或下期钩子</td><td>结尾含「关注 / 下期」</td><td><span class="sev b">阻断</span></td></tr>
+      <tr><td class="num">C3</td><td>抖音</td><td>投流禁用语</td><td>投流=是 时命中关注/点赞/评论/转发/私信/双击/收藏</td><td><span class="sev b">阻断</span></td></tr>
+      <tr><td class="num">C4</td><td>抖音</td><td>商单标记</td><td>商单=是 时，客户要求的互动引导须附【客户要求·风险已报批】</td><td><span class="sev s">建议</span></td></tr>
+      <tr><td class="num">V1</td><td>全部</td><td>词库命中</td><td>本地词库子串匹配，给上下文 25 字；命中=必审</td><td><span class="sev b">阻断</span></td></tr>
+      <tr><td class="num">V2</td><td>全部</td><td>绝对化用语</td><td>最/第一/国家级/唯一/100%/全网首发/最好用/第一选择</td><td><span class="sev b">阻断</span></td></tr>
+      <tr><td class="num">V3</td><td>全部</td><td>导流</td><td>微信号、二维码、手机号、加微信/私信领、点击下方链接</td><td><span class="sev b">阻断</span></td></tr>
+      <tr><td class="num">V4</td><td>全部</td><td>类目红线</td><td>医疗功效、金融收益承诺、K12 学科、拉踩竞品、AI 取代人</td><td><span class="sev b">阻断</span></td></tr>
+      <tr><td class="num">X1</td><td>全部</td><td>结构完整</td><td>按平台约定解析章节/场次，缺章或空章</td><td><span class="sev b">阻断</span></td></tr>
+      <tr><td class="num">X2</td><td>全部</td><td>待核实未标注</td><td>使用「待核实」资料却未标注</td><td><span class="sev b">阻断</span></td></tr>
+      <tr><td class="num">X3</td><td>全部</td><td>真实性溯源</td><td>「真实体验/截图/翻车/具体数据」在资料区找不到对应条目</td><td><span class="sev b">阻断</span></td></tr>
+      <tr><td class="num">X4</td><td>全部</td><td>重复表达</td><td>句级相似度 ≥0.85 的句子对</td><td><span class="sev s">建议</span></td></tr>
+      <tr><td class="num">X5</td><td>全部</td><td>标题一致</td><td>标题关键词在正文中缺失</td><td><span class="sev s">建议</span></td></tr>
+    </tbody>
+  </table>
+
+  <h3>小红书规则（R 系列）</h3>
+  <table>
+    <thead><tr><th style="width:60px">ID</th><th style="width:150px">检查项</th><th style="width:96px">适用类型</th><th>判定逻辑</th><th style="width:58px">级别</th></tr></thead>
+    <tbody>
+      <tr><td class="num">R1</td><td>标题长度</td><td>全部</td><td>12–20 字</td><td><span class="sev s">建议</span></td></tr>
+      <tr><td class="num">R2</td><td>标题利益点</td><td>全部</td><td>标题含具体利益点、身份标签或数字；空泛标题报错</td><td><span class="sev s">建议</span></td></tr>
+      <tr><td class="num">R3</td><td>首屏结论</td><td>全部</td><td>前三行内出现结论句；自我介绍一下/背景铺垫开头 → 阻断</td><td><span class="sev b">阻断</span></td></tr>
+      <tr><td class="num">R4</td><td>分点数量</td><td>教程 / 测评</td><td>3–5 个分点</td><td><span class="sev s">建议</span></td></tr>
+      <tr><td class="num">R5</td><td>段落行数</td><td>全部</td><td>单段 ≤3 行，段间空行</td><td><span class="sev s">建议</span></td></tr>
+      <tr><td class="num">R6</td><td>分点首句</td><td>教程</td><td>每点首句为判断句或结论句；连续 3 点以过渡词开头 → 提示</td><td><span class="sev t">提示</span></td></tr>
+      <tr><td class="num">R7</td><td>配图说明</td><td>全部</td><td>3–9 张，每张有且仅有一句说明</td><td><span class="sev s">建议</span></td></tr>
+      <tr><td class="num">R8</td><td>标签相关性</td><td>全部</td><td>3–6 个；至少 2 个在正文出现相关词</td><td><span class="sev t">提示</span></td></tr>
+      <tr><td class="num">R9</td><td>正文长度</td><td>全部</td><td>300–800 字</td><td><span class="sev t">提示</span></td></tr>
+      <tr><td class="num">R10</td><td>导流与外链</td><td>全部</td><td>URL、微信号、二维码、加V、私信领</td><td><span class="sev b">阻断</span></td></tr>
+      <tr><td class="num">R11</td><td>绝对化与功效</td><td>全部</td><td>最/第一/唯一/100%；治病、减肥、提升视力等功效承诺</td><td><span class="sev b">阻断</span></td></tr>
+    </tbody>
+  </table>
+
+  <h3>公众号规则（G 系列）</h3>
+  <table>
+    <thead><tr><th style="width:60px">ID</th><th style="width:150px">检查项</th><th>判定逻辑</th><th style="width:58px">级别</th></tr></thead>
+    <tbody>
+      <tr><td class="num">G1</td><td>开篇承诺</td><td>200 字内提出核心问题或冲突；无问题句 → 阻断</td><td><span class="sev b">阻断</span></td></tr>
+      <tr><td class="num">G2</td><td>章节数量</td><td>3–5 章，每章有小标题</td><td><span class="sev s">建议</span></td></tr>
+      <tr><td class="num">G3</td><td>小标题具体性</td><td>「一、二、三」「第一部分」式空标题 → 建议</td><td><span class="sev s">建议</span></td></tr>
+      <tr><td class="num">G4</td><td>章节承接</td><td>每章首句与上章有承接关系；硬切 → 提示</td><td><span class="sev t">提示</span></td></tr>
+      <tr><td class="num">G5</td><td>段落行数</td><td>单段 ≤5 行</td><td><span class="sev t">提示</span></td></tr>
+      <tr><td class="num">G6</td><td>结尾回扣</td><td>结尾回扣开篇问题；无回扣 → 建议</td><td><span class="sev s">建议</span></td></tr>
+      <tr><td class="num">G7</td><td>硬广收尾</td><td>「赶快关注/点击购买/扫码领取」类 → 阻断</td><td><span class="sev b">阻断</span></td></tr>
+      <tr><td class="num">G8</td><td>正文长度</td><td>1500–3000 字</td><td><span class="sev t">提示</span></td></tr>
+    </tbody>
+  </table>
+
+  <h3>类型附加规则（T 系列，跨平台）</h3>
+  <p class="tbl-note" style="margin-bottom:10px">T 系列只看选题的内容类型，与平台无关。同一选题在三个平台各出一份内容时，三份都受同一组 T 规则约束；类型由选题决定，见第 02 节。</p>
+  <table>
+    <thead><tr><th style="width:60px">ID</th><th style="width:140px">检查项</th><th style="width:110px">适用类型</th><th>判定逻辑</th><th style="width:58px">级别</th></tr></thead>
+    <tbody>
+      <tr><td class="num">T1</td><td>步骤可执行</td><td>教程</td><td>每步含具体动作、对象与结果；「进行配置 / 完成设置 / 选择合适参数」类空动作 → 建议</td><td><span class="sev s">建议</span></td></tr>
+      <tr><td class="num">T2</td><td>前置条件</td><td>教程</td><td>工具名、版本、是否付费、是否需账号，至少写明三项</td><td><span class="sev s">建议</span></td></tr>
+      <tr><td class="num">T3</td><td>坑位与代价</td><td>教程 / 测评</td><td>只讲好处、完全不提限制或失败情况 → 提示</td><td><span class="sev t">提示</span></td></tr>
+      <tr><td class="num">T4</td><td>结果可验证</td><td>教程</td><td>「效果很好 / 提升明显」且无可核对的结果或过程记录 → 阻断</td><td><span class="sev b">阻断</span></td></tr>
+      <tr><td class="num">T5</td><td>对比维度一致</td><td>测评</td><td>维度 ≥3 且全文一致；中途换标准 → 提示</td><td><span class="sev s">建议</span></td></tr>
+      <tr><td class="num">T6</td><td>参数与价格溯源</td><td>测评</td><td>参数、价格、版本号须对应资料区事实条目；无来源 → 阻断</td><td><span class="sev b">阻断</span></td></tr>
+      <tr><td class="num">T7</td><td>结论取舍</td><td>测评</td><td>结尾给出「谁适合 / 谁不适合」或明确推荐；只罗列不下判断 → 建议</td><td><span class="sev s">建议</span></td></tr>
+      <tr><td class="num">T8</td><td>单一主论点</td><td>观点</td><td>并列主论点 ≤2 条；出现第三个并列主论点 → 建议</td><td><span class="sev s">建议</span></td></tr>
+      <tr><td class="num">T9</td><td>论点支撑</td><td>观点</td><td>每个论点至少 1 处资料条目支撑</td><td><span class="sev s">建议</span></td></tr>
+      <tr><td class="num">T10</td><td>预设反驳</td><td>观点</td><td>未回应任何反方观点 → 建议</td><td><span class="sev s">建议</span></td></tr>
+      <tr><td class="num">T11</td><td>来源与时间</td><td>观点</td><td>引用具体数字无来源与时间 → 阻断；只缺出处、无数字 → 提示</td><td><span class="sev b">阻断</span></td></tr>
+      <tr><td class="num">T12</td><td>事实与推测</td><td>观点</td><td>推测须显式标注「我的判断」；混写 → 阻断</td><td><span class="sev b">阻断</span></td></tr>
+      <tr><td class="num">T13</td><td>预测边界</td><td>观点</td><td>出现具体增长数字或时间承诺 → 建议</td><td><span class="sev s">建议</span></td></tr>
+    </tbody>
+  </table>
+  <p class="tbl-note">X 系列只保留跨平台通用项（结构完整、待核实、真实性、重复、标题一致）；H / R / G 做<strong>平台形态</strong>；T 系列做<strong>选题类型</strong>。执行顺序：先按目标平台取形态规则，再按选题的内容类型取 T 规则，X 与闸②④始终生效。选题未选类型时 T 系列不跑，其余照常。「实测宣称」由 X3 统一覆盖，不再单列。</p>
+
+  <h3>词库与阈值来源</h3>
+  <table>
+    <thead><tr><th style="width:200px">来源</th><th style="width:230px">用途</th><th>说明</th></tr></thead>
+    <tbody>
+      <tr><td><code>~/.workbuddy/skills/douyin-sensitive-check/data/sensitive_words.txt</code></td><td>闸门④主词库</td><td>每次质检直读原文件，不复制、不写回；界面显示词数与文件修改时间，你更新词库后立即生效</td></tr>
+      <tr><td>应用内白名单</td><td>误报抑制</td><td>只存排除词与理由，独立于原词库；原文件不受影响，白名单改动留记录</td></tr>
+      <tr><td>旧库 <code>口播规则/极限词自查清单.md</code></td><td>人工补强参考</td><td>只作分类与人工复核依据，不整份导入为规则</td></tr>
+      <tr><td>旧库 <code>通用脚本规范.md</code> §2/§3/§4.1</td><td>硬禁用词、红线、投流条款</td><td>按需摘取进默认规则，不整套继承</td></tr>
+      <tr><td>旧库 <code>CTA模板库.md</code></td><td>闸门③判定词表</td><td>自然流量 / 投流 / 商单三套判定</td></tr>
+    </tbody>
+  </table>
+  <p class="tbl-note">旧库文件只读引用，应用不修改它们；若文件缺失，对应规则自动降级为「不可用」并在状态条提示，不静默失效。</p>
+
+  <h3>AI 审阅（可选）</h3>
+  <p>点「生成审阅提示词」得到一段文本：平台规范 + 正文 + 资料分类摘要，要求 AI 输出逻辑断点、说服力薄弱处、调性不符处，每条附段落定位。结论贴回后标为「AI 参考」，系统不解析、不采信为判定，只作为写作记录。</p>
+</section>
+
+<section id="s8">
+  <h2><span class="n">08</span>技术实现方案与外部依赖</h2>
+  <p class="lead">本节说明实现方式，不构成对产品行为的补充；产品行为以第 05 节为准。</p>
+
+  <h3>形态与运行</h3>
+  <ul>
+    <li>Node 本地服务 + 浏览器界面，一条命令或双击 <code>start.command</code> 启动，打开 <code>http://localhost:5178</code>。</li>
+    <li>服务只监听本机回环地址，不对外暴露，不要求登录。</li>
+    <li>前端 React + Vite，构建后由同一服务托管，日常使用不依赖开发服务器。</li>
+    <li>后端 Fastify；数据 SQLite（<code>better-sqlite3</code>，预编译二进制）；DOCX 用 <code>mammoth</code>，PDF 用 <code>pdf-parse</code>，网页正文用 <code>@mozilla/readability</code> + <code>jsdom</code>。</li>
+  </ul>
+
+  <h3>数据存储</h3>
+  <table>
+    <thead><tr><th style="width:170px">内容</th><th style="width:250px">位置</th><th>说明</th></tr></thead>
+    <tbody>
+      <tr><td>结构化数据</td><td><code>data/workbench.db</code></td><td>选题、资料、稿件、版本、质检、规则、模板、排期、候选池</td></tr>
+      <tr><td>导入原件</td><td><code>data/assets/</code></td><td>按选题 ID 分目录，保留原件</td></tr>
+      <tr><td>导出与备份</td><td><code>data/exports/</code>、<code>data/backups/</code></td><td>JSON 全量、Markdown 打包、滚动备份</td></tr>
+      <tr><td>归档成品</td><td>Obsidian <code>内容工作台/</code></td><td>由应用写入，非真相源</td></tr>
+    </tbody>
+  </table>
+  <p class="tbl-note">项目根目录：<code>/Users/liz/Documents/Trae-CN/内容工作台</code>。数据默认随项目存放，便于整体迁移；设置中可改到外部目录。</p>
+
+  <h3>外部依赖与前提</h3>
+  <table>
+    <thead><tr><th style="width:190px">依赖</th><th style="width:100px">必要性</th><th>缺省时的行为</th></tr></thead>
+    <tbody>
+      <tr><td>Node.js 20+</td><td>必需</td><td>无法运行；安装说明写入 README</td></tr>
+      <tr><td>Obsidian 库路径可写</td><td>归档时必需</td><td>其余功能正常，归档按钮禁用并说明原因</td></tr>
+      <tr><td>违禁词库文件</td><td>闸门④必需</td><td>文件缺失时闸门④不可用并标红，其余闸门照常</td></tr>
+      <tr><td>网络（链接抓取 / 选题检索）</td><td>可选</td><td>失败降级为手动粘贴，不影响其他功能</td></tr>
+      <tr><td>Python + check_prose.py（旧库）</td><td>不接入</td><td>闸门②全部用内置规则实现，不引入 Python 运行时；日后若要对比，再把旧脚本当外部参考</td></tr>
+      <tr><td>LLM API Key</td><td>本期不需要</td><td>生成走提示词工作流；配置后才启用一键生成</td></tr>
+      <tr><td>平台账号 / 开放平台授权</td><td>本期不涉及</td><td>不做发布，只提供复制与导出</td></tr>
+    </tbody>
+  </table>
+
+  <h3>项目目录（开发完成后）</h3>
+  <pre style="font-family:var(--mono); font-size:12px; background:#faf9f6; border:1px solid var(--line); border-radius:8px; padding:12px; overflow:auto">内容工作台/
+├── README.md       运行方式、功能清单、已知限制
+├── start.command   双击启动
+├── server/         本地服务与数据层
+├── web/            界面
+├── data/           SQLite、素材原件、导出、备份
+└── docs/           数据字典、规则说明</pre>
+  <div class="box warn"><div class="bt">环境说明</div><p style="margin:0">开发目录按你的指定放在 <code>/Users/liz/Documents/Trae-CN/内容工作台</code>，与 <code>~/Desktop/Dashboard</code> 的 Remotion 项目完全隔离。</p></div>
+</section>
+
+<section id="s9">
+  <h2><span class="n">09</span>能力边界</h2>
+  <p class="lead">让你在验收时有明确预期，避免「以为实现了其实没有」。</p>
+
+  <h3><span class="bd a">真实实现</span> 不依赖任何外部服务</h3>
+  <ul>
+    <li>选题池、候选池、状态推导、筛选搜索、排期看板、素材复用。</li>
+    <li>资料四通道录入（粘贴 / 链接登记 / 文件导入 / 抓取）、分类与核实状态。</li>
+    <li>Prompt 组装、大纲与成稿、结果回填、结构解析与校验、三平台独立状态。</li>
+    <li>四道闸质检（H/S/C/V/X 规则集）、定位到段落与场次、采纳与忽略。</li>
+    <li>版本记录、差异对比、回滚。</li>
+    <li>写入 Obsidian、frontmatter、索引维护、冲突检测。</li>
+    <li>全量导出与滚动备份。</li>
+  </ul>
+
+  <h3><span class="bd b">需要前提</span> 有外部条件才成立</h3>
+  <ul>
+    <li><strong>链接正文抓取</strong>：需网络且站点可访问。登录墙、付费墙、反爬、动态渲染会失败，只报原因不伪造。覆盖率无法承诺。</li>
+    <li><strong>PDF / DOCX 提取</strong>：扫描件与图片型 PDF 无法提取文字，需先转文本或 OCR。</li>
+    <li><strong>Obsidian 写入</strong>：需 macOS 授权该进程访问「文稿」目录，且库路径存在；首次可能触发系统权限弹窗。</li>
+    <li><strong>选题雷达导入</strong>：依赖 <code>02_内容规划/选题池/</code> 文件存在且格式稳定；格式变了就导入失败，不猜。</li>
+    <li><strong>违禁词库</strong>：依赖本地词库文件；词库过期只影响覆盖面，不影响其他功能。</li>
+    <li><strong>一键生成与 AI 审阅</strong>：需可用 LLM API Key 与网络（本期不启用，留接口）。</li>
+  </ul>
+
+  <h3><span class="bd c">只能人工</span> 本方案不做，也不假装做</h3>
+  <ul>
+    <li><strong>热点判定与选题推荐</strong>：无平台数据授权，不做热度打分；候选必须带来源与日期。</li>
+    <li><strong>平台发布</strong>：无账号授权，只提供复制与导出。</li>
+    <li><strong>合规判定</strong>：不做法律判断，不保证审核通过；词库命中只是「必审」信号。</li>
+    <li><strong>语义质量与语境豁免</strong>：引号内反面示例、版本序数等是否豁免，由你判定。</li>
+    <li><strong>事实核验</strong>：只能提醒「待核实」，不能替你核实。</li>
+    <li><strong>画面与成片合规</strong>：BGM、字体、肖像、logo 水印、画质等归剪辑方，应用不检测视频。</li>
+    <li><strong>图片内容识别</strong>：图片只登记，不解析内容。</li>
+  </ul>
+</section>
+
+<section id="s10">
+  <h2><span class="n">10</span>开发优先级与测试方案</h2>
+
+  <h3>优先级</h3>
+  <table>
+    <thead><tr><th style="width:66px">级别</th><th style="width:270px">内容</th><th>说明</th></tr></thead>
+    <tbody>
+      <tr><td><span class="sev b">P0</span></td><td>选题池 → 资料区 → 大纲确认 → 成稿 → 结构校验 → 四闸质检 → 版本 → 归档</td><td>缺任一环闭环不成立，无法验收</td></tr>
+      <tr><td><span class="sev s">P1</span></td><td>排期看板、跨选题素材复用、候选池（雷达导入 + 定期补充）、差异对比、导出备份</td><td>本轮确认纳入 v1</td></tr>
+      <tr><td><span class="sev t">P2</span></td><td>API 一键生成、AI 审阅入库、发布后数据回流与分级复盘、多账号</td><td>留接口，不建界面</td></tr>
+    </tbody>
+  </table>
+
+  <h3>实施顺序</h3>
+  <ol>
+    <li>骨架与数据层：目录、SQLite、对象与状态机、启动脚本。</li>
+    <li>选题池与资料区：四通道录入、分类、抓取与解析降级。</li>
+    <li>选题供给：雷达只读导入、候选池、采纳转正。</li>
+    <li>抖音两段式：大纲 → 确认 → 分镜脚本；小红书与公众号成稿；结构解析与校验。</li>
+    <li>四闸质检：H/S/C/V/X/T 规则、定位、采纳与忽略、报告绑定版本。</li>
+    <li>版本与对比、归档写入、冲突检测。</li>
+    <li>排期看板与素材复用。</li>
+    <li>真实选题端到端跑通，修问题，补文档。</li>
+  </ol>
+
+  <h3>验收测试</h3>
+  <table>
+    <thead><tr><th style="width:140px">用例</th><th style="width:240px">做法</th><th>通过标准</th></tr></thead>
+    <tbody>
+      <tr><td>TC01 端到端</td><td>用「AI 做 PPT」完成三平台稿件并归档</td><td>三份结构合法、零阻断、Obsidian 文件可读且 frontmatter 正确</td></tr>
+      <tr><td>TC02 差异化</td><td>比对三份稿件与资料底座</td><td>各含平台特有要素，无整段照搬</td></tr>
+      <tr><td>TC03 听觉闸</td><td>构造钩子弱、字数超容差、单句 60 字的抖音稿</td><td>H1/H2/H3 逐条命中并定位到句</td></tr>
+      <tr><td>TC04 CTA 分支</td><td>同一稿分别标 自然流量 / 投流 / 商单</td><td>三种口径判定不同，投流命中互动词即阻断</td></tr>
+      <tr><td>TC05 违禁词</td><td>植入「加微信」「国家级」</td><td>V1/V3 命中为必审，人工判定后可放行或阻断</td></tr>
+      <tr><td>TC06 真实性</td><td>编造一段「我实测翻了三次车」且资料无对应条目</td><td>X3 阻断并指向该句</td></tr>
+      <tr><td>TC07 大纲卡口</td><td>大纲未确认时点「生成分镜」</td><td>按钮禁用并提示需先确认方向</td></tr>
+      <tr><td>TC08 结构失败</td><td>回填缺章节的公众号文本</td><td>报缺失章节，禁止归档，可存草稿</td></tr>
+      <tr><td>TC09 抓取失败</td><td>抓一个需登录页面</td><td>明确报「需登录」，不写入正文</td></tr>
+      <tr><td>TC10 归档冲突</td><td>手改 Obsidian 已归档文件后再归档</td><td>指纹变化被检测并中止，给三个选项</td></tr>
+      <tr><td>TC11 类型规则</td><td>同一选题分别标 教程 / 测评 / 观点，各出一份稿</td><td>T 系列按类型切换：教程跑步骤与前置，测评跑维度与溯源，观点跑主论点与反驳</td></tr>
+      <tr><td>TC12 断网</td><td>断网走除抓取与选题检索外的全流程</td><td>全部可用，仅相关入口报错</td></tr>
+    </tbody>
+  </table>
+  <p class="tbl-note">不测试「自动发布」「热度准确性」「合规通过率」，因为不在范围内。</p>
+</section>
+
+<section id="s11">
+  <h2><span class="n">11</span>潜在风险与对策</h2>
+  <table>
+    <thead><tr><th style="width:190px">风险</th><th style="width:64px">影响</th><th>对策</th></tr></thead>
+    <tbody>
+      <tr><td>违禁词误报过多导致被忽略</td><td>高</td><td>命中只标「必审」，语境判定交给人；每条词可单独加白名单，白名单留记录</td></tr>
+      <tr><td>3–5 分钟长稿字数控制不住</td><td>高</td><td>编辑器实时显示字数与折算秒数；H2 用 ±10% 容差，超限给「删哪类冗余」的具体建议</td></tr>
+      <tr><td>三平台稿子变成同一稿变体</td><td>高</td><td>每平台独立模板与结构；TC02 专测；Prompt 禁止跨平台复用句式</td></tr>
+      <tr><td>真实性标注形同虚设</td><td>高</td><td>X3 阻断；资料区没有对应条目就不给过；标记必须人工清除</td></tr>
+      <tr><td>资料分类负担重、实际懒得标</td><td>中</td><td>允许先存后标，仅在生成与质检时强制；提供批量分类</td></tr>
+      <tr><td>雷达文件格式变化导致导入失败</td><td>中</td><td>导入前做格式探测，失败明确报错不静默；保留手工录入通道</td></tr>
+      <tr><td>Obsidian 路径权限或同步冲突</td><td>中</td><td>写入前指纹校验，失败不静默，提供导出兜底</td></tr>
+      <tr><td>SQLite 原生依赖安装失败</td><td>中</td><td>保留 JSON 文件存储降级路径，启动时自动选择并记录</td></tr>
+      <tr><td>功能膨胀导致界面变重</td><td>中</td><td>P2 只留接口；每次迭代先确认是否影响主链路</td></tr>
+      <tr><td>对质检能力的误解</td><td>高</td><td>界面常驻边界声明；报告只用「命中/未命中」，不用「合规/安全」</td></tr>
+    </tbody>
+  </table>
+</section>
+
+<section id="s12">
+  <h2><span class="n">12</span>确认事项</h2>
+
+  <h3>已确认（v0.2 已按此写）</h3>
+  <table>
+    <thead><tr><th style="width:60px">编号</th><th style="width:210px">事项</th><th>结论</th></tr></thead>
+    <tbody>
+      <tr><td class="num">C1</td><td>生成方式</td><td>双模式，先跑提示词工作流，API 为后续增强</td></tr>
+      <tr><td class="num">C2</td><td>平台规范</td><td>无现成文档，由我整理默认值，你审改</td></tr>
+      <tr><td class="num">C3</td><td>归档</td><td>应用为主，自动写入 Obsidian 主库 <code>内容工作台/</code></td></tr>
+      <tr><td class="num">C4</td><td>运行形态</td><td>本地 Web 应用</td></tr>
+      <tr><td class="num">C5</td><td>资料入口</td><td>粘贴、链接登记、自动抓取、本地文件导入（图片只登记）</td></tr>
+      <tr><td class="num">C6</td><td>生成粒度</td><td>三平台独立生成，不做互转</td></tr>
+      <tr><td class="num">C7</td><td>质检</td><td>规则引擎为主，AI 审阅作参考记录</td></tr>
+      <tr><td class="num">C8</td><td>v1 范围</td><td>版本对比、排期看板、跨选题素材复用</td></tr>
+      <tr><td class="num">C9</td><td>账号</td><td>仅 AKA张猩猩，单账号，语速 7 字/秒</td></tr>
+      <tr><td class="num">C10</td><td>与旧库关系</td><td>重构版，不整套继承，不写回旧库；参考其规则</td></tr>
+      <tr><td class="num">C11</td><td>开发目录</td><td><code>/Users/liz/Documents/Trae-CN/内容工作台</code></td></tr>
+      <tr><td class="num">C12</td><td>选题供给</td><td>接雷达产出 + 我定期补充候选</td></tr>
+      <tr><td class="num">C13</td><td>内容类型</td><td>选题级字段，三类：教程 / 测评 / 观点；一个选题一个类型，三平台共用。复盘按教程建、行业观察按观点建，不单列。平台只决定形态，类型决定第 07 节 T 系列规则</td></tr>
+      <tr><td class="num">C14</td><td>抖音时长</td><td>固定 3–5 分钟区间（1260–2100 字），不设自定义目标时长，按稿子的实际落点折算校验</td></tr>
+      <tr><td class="num">C15</td><td>闸②实现</td><td>只用内置规则，不接入旧库 check_prose.py，不引入 Python 依赖</td></tr>
+      <tr><td class="num">C16</td><td>投流 / 商单</td><td>极少使用。默认只跑自然流量 CTA 口径，投流与商单标记收在「更多设置」里，勾选后才展开对应分支</td></tr>
+      <tr><td class="num">C17</td><td>词库维护</td><td>直读现有敏感词文件，不复制、不写回；应用内只维护白名单</td></tr>
+      <tr><td class="num">C18</td><td>小红书首图</td><td>有固定风格。应用只预留封面文案字段与字数提示，不预设字体配色，也不代写文案</td></tr>
+      <tr><td class="num">C19</td><td>候选补量</td><td>每周一次，8–12 条，带来源链接与检索日期</td></tr>
+    </tbody>
+  </table>
+</section>
+
+<section style="background:#fbfbf9">
+  <h2 style="margin-bottom:8px">确认与开发</h2>
+  <p style="margin:0 0 8px">本方案已于 2026-10-28 确认。开发按「骨架 → 核心生产流程 → 真实选题端到端 → 修问题迭代」推进，中途如有重大变更先与你确认。</p>
+  <p style="margin:0; color:var(--ink-2); font-size:13.5px">交付时提供运行方式、项目文件说明、已实现功能清单与已知限制。开发目录：<code>/Users/liz/Documents/Trae-CN/内容工作台</code>。</p>
+</section>
+
+</main>
+</div>
+
+<footer>v0.3 定稿（2026-10-28 你已确认）· 依据访谈、旧库规则文件与各项模型收敛整理。阈值、目录名、默认规范仍可在「规范与模板」中调整。</footer>
+
+</body>
+</html>

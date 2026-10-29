@@ -7,3 +7,14 @@ out/
 *.log
 .env
 .env.local
+
+# 内容工作台：依赖、构建产物、本地数据（含 API Key 与用户内容，不进版本库）
+内容工作台/node_modules/
+内容工作台/web/dist/
+内容工作台/data/
+
+# 内容工作台：历史草稿（已被 v0.3 定稿取代，仅本地保留）
+内容工作台-产品需求方案-v0.1.html
+内容工作台-产品需求方案-v0.2.html
+.trae-html-share-packages/
+.screenshots/
